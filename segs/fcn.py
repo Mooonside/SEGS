@@ -71,6 +71,34 @@ def fcn_8(inputs, num_classes=21):
 
     return fcn_1, end_points
 
+def fcn_16(inputs, num_classes=21):
+    image_shape = tensor_shape(inputs)
+
+    with arg_scope(vgg_arg_scope()):
+        fcn_32, end_points = vgg_16(inputs, num_classes=num_classes,
+                                    spatial_squeeze=False, fc_conv_padding='SAME')
+    with tf.name_scope('upscale') as ns:
+        end_points_collection = ns + '_end_points'
+        with arg_scope([conv2d], outputs_collections=end_points_collection):
+            # conv7 deconv and add with pool4 [jump = 16]
+            pool4 = end_points['vgg_16/pool4:0']
+            fcn_16 = fcn_upsample_2(fcn_32, pool4, ksize=[4, 4], name='to_16')
+
+            # pool3 = end_points['vgg_16/pool3:0']
+            # fcn_8 = fcn_upsample_2(fcn_16, pool3, ksize=[4, 4], name='to_8')
+
+            fcn_1 = trans_conv2d(fcn_8, outc=num_classes, ksize=[16, 16], strides=[8, 8],
+                                 output_shape=image_shape[:-1] + [num_classes], name='to_1')
+
+            print(tf.get_collection(end_points_collection))
+            end_points.update(
+                dict([(ep.name, ep) for ep in tf.get_collection(end_points_collection)]))
+        end_points[ns + '_to_16'] = fcn_16
+        end_points[ns + '_to_8'] = fcn_8
+        end_points[ns + '_to_1'] = fcn_1
+
+    return fcn_1, end_points
+
 
 inputs = tf.placeholder(name='inputs', shape=[16, 224, 224, 3], dtype=tf.float32)
 fcn_1, end_points = fcn_8(inputs)
