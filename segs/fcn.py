@@ -16,6 +16,9 @@ def fcn_upsample_1(small, big, ksize=[4, 4], strides=[2, 2], padding='SAME',
                    name=None, outputs_collections=None):
     # trans_conv small to big size
     with tf.variable_scope(name, 'fcn_upsample'):
+        outc = tensor_shape(small)[-1]
+        big = conv2d(big, outc, ksize=[1, 1], activate=None, name='score_conv')
+        
         big_shape = tensor_shape(big)
         big_dim = big_shape[-1]
         trans_conv = trans_conv2d(small, outc=big_dim, ksize=ksize, output_shape=big_shape,
@@ -87,7 +90,7 @@ def fcn_16(inputs, num_classes=21):
             # pool3 = end_points['vgg_16/pool3:0']
             # fcn_8 = fcn_upsample_2(fcn_16, pool3, ksize=[4, 4], name='to_8')
 
-            fcn_1 = trans_conv2d(fcn_8, outc=num_classes, ksize=[16, 16], strides=[8, 8],
+            fcn_1 = trans_conv2d(fcn_16, outc=num_classes, ksize=[16, 16], strides=[8, 8],
                                  output_shape=image_shape[:-1] + [num_classes], name='to_1')
 
             print(tf.get_collection(end_points_collection))
