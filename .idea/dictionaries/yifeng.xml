@@ -2,6 +2,8 @@
   <dictionary name="yifeng">
     <words>
       <w>conv</w>
+      <w>deconv</w>
+      <w>ksize</w>
     </words>
   </dictionary>
 </component>

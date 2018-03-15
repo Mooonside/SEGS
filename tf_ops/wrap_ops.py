@@ -13,6 +13,11 @@ add_arg_scope = tf.contrib.framework.add_arg_scope
 
 
 @add_arg_scope
+def tensor_shape(tensor):
+    return [i.value for i in tensor.get_shape()]
+
+
+@add_arg_scope
 def get_variable(name, shape, dtype=tf.float32, device='0', init=None, reg=None, collections=None):
     if device == 'CPU' or 'cpu':
         with tf.device('/cpu:0'):
@@ -46,28 +51,29 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
     :param outputs_collections: add result to some collection
     :return: convolution after activation
     """
-    indim = inputs.get_shape()[-1].value
+    indim = tensor_shape(inputs)[-1]
 
     with tf.variable_scope(name, 'conv'):
         filters = get_variable(name='weights', shape=ksize + [indim, outc],
                                init=init, reg=reg)
-
-        conv = tf.nn.conv2d(input=inputs,
-                            filter=filters,
-                            strides=[1] + strides + [1],
-                            padding=padding,
-                            use_cudnn_on_gpu=True,
-                            data_format="NHWC",
-                            dilations=[1] + ratios + [1],
-                            name=name)
-
-        tf.add_to_collection(outputs_collections, conv)
-
-        if batch_norm:
-            conv = batch_norm2d(conv)
-        else:
+        if not batch_norm:
             biases = get_variable(name='biases', shape=[outc], init=tf.zeros_initializer)
-            conv = conv + biases
+
+    conv = tf.nn.conv2d(input=inputs,
+                        filter=filters,
+                        strides=[1] + strides + [1],
+                        padding=padding,
+                        use_cudnn_on_gpu=True,
+                        data_format="NHWC",
+                        dilations=[1] + ratios + [1],
+                        name=name)
+
+    tf.add_to_collection(outputs_collections, conv)
+
+    if batch_norm:
+        conv = batch_norm2d(conv)
+    else:
+        conv = conv + biases
 
     if activate is not None:
         conv = activate(conv)
@@ -89,14 +95,14 @@ def fully_connected(inputs, outc, name='None',
     :param outputs_collections: add result to some collection
     :return:
     """
-    indim = inputs.get_shape()[-1].value
+    indim = tensor_shape(inputs)[-1]
     with tf.variable_scope(name, 'fully_connected'):
         weights = get_variable(name='weights', shape=[indim, outc],
                                init=init, reg=reg)
         biases = get_variable(name='biases', shape=[outc],
                               init=tf.zeros_initializer)
 
-        dense = tf.tensordot(inputs, weights, axes=[[-1], [0]]) + biases
+    dense = tf.tensordot(inputs, weights, axes=[[-1], [0]]) + biases
     tf.add_to_collection(outputs_collections, dense)
 
     if activate is not None:
@@ -150,7 +156,7 @@ def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, na
     :return: batch_norm output
     """
     with tf.variable_scope(name, default_name='BatchNorm2d'):
-        params_shape = inputs.get_shape()[-1:]
+        params_shape = tensor_shape(inputs)[-1:]
         moving_mean = tf.get_variable('mean', params_shape,
                                       initializer=tf.zeros_initializer,
                                       trainable=False)
@@ -191,3 +197,44 @@ def l2_regularizer(scale, scope=None):
         scale,
         scope=scope
     )
+
+
+@add_arg_scope
+def trans_conv2d(inputs, outc, ksize, output_shape, strides=[1, 1], padding='SAME',
+                 init=None, reg=None, name=None):
+    with tf.variable_scope(name, 'trans_conv'):
+        indim = tensor_shape(inputs)[-1]
+        filters = get_variable(name='weights', shape=ksize + [outc, indim],
+                               init=init, reg=reg)
+
+    trans_conv = tf.nn.conv2d_transpose(
+        inputs,
+        filters,
+        output_shape,
+        strides,
+        padding=padding,
+        name=name
+    )
+
+    return trans_conv
+
+
+@add_arg_scope
+def crop(small, big):
+    """
+    crop big centrally according to small 's shape
+    :param small: [Ns, hs, ws, cs]
+    :param big: [NB, HB, WB, CB]
+    :return: big cropped to [NB, hs, ws, CB]
+    """
+    small_shape = tensor_shape(small)
+    big_shape = tensor_shape(big)
+
+    assert small_shape[0] == big_shape[0]
+    start_h = (big_shape[1] - small_shape[1]) // 2
+    start_w = (big_shape[2] - small_shape[2]) // 2
+    start = [0, start_h, start_w, 0]
+    size = [big_shape[0], small_shape[1], small_shape[2], big_shape[3]]
+
+    crop = tf.slice(big, start, size)
+    return crop

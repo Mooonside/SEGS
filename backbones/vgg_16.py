@@ -8,8 +8,6 @@ from __future__ import print_function
 
 from tf_ops.wrap_ops import *
 
-slim = tf.contrib.slim
-
 arg_scope = tf.contrib.framework.arg_scope
 
 
@@ -112,14 +110,14 @@ def vgg_16(inputs,
 
             if global_pool:
                 net = tf.reduce_mean(net, [1, 2], keep_dims=True, name='global_pool')
-                end_points['global_pool'] = net
+                end_points['global_pool:0'] = net
             if num_classes:
                 net = drop_out(net, dropout_keep_prob, is_training=is_training, name='dropout7')
                 net = conv2d(net, num_classes, [1, 1], activate=None, name='fc8')
 
                 if spatial_squeeze:
                     net = tf.squeeze(net, [1, 2], name='fc8/squeezed')
-                end_points[sc.name + '/fc8'] = net
+                end_points[sc.name + '/fc8:0'] = net
             return net, end_points
 
 
