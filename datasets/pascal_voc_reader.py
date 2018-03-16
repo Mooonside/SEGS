@@ -89,7 +89,10 @@ def reshape(name, image, label, reshape_size=None):
     if reshape_size is not None:
         image = tf.expand_dims(image, axis=0)
         image = tf.image.resize_bilinear(image, reshape_size)
-    return name, tf.squeeze(image), label
+        label = tf.expand_dims(label, axis=0)
+        label = tf.image.resize_nearest_neighbor(label, reshape_size)
+
+    return name, tf.squeeze(image), tf.squeeze(label)
 
 
 def cast_type(name, image, label):
@@ -143,5 +146,5 @@ def pascal_inputs(dir, batch_size, num_epochs, reshape_size):
         name_batch, image_batch, label_batch = iterator.get_next()
         image_batch = tf.reshape(image_batch, [batch_size] + reshape_size + [3])
         label_batch = tf.reshape(label_batch, [batch_size] + reshape_size + [1])
-        tf.image.resize_area
+
     return name_batch, image_batch, label_batch
