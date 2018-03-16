@@ -11,19 +11,26 @@ from tf_ops.wrap_ops import *
 arg_scope = tf.contrib.framework.arg_scope
 
 
-def vgg_arg_scope(weight_decay=0.0005, device='CPU'):
+def vgg_arg_scope(weight_init=None, weight_reg=None,
+                  bias_init=tf.zeros_initializer, bias_reg=None,
+                  device='CPU', is_training=True):
     """
     define arg_scope for vgg model
-    :param weight_decay: for l2 normalize
+    :param weight_init: weight initializer
+    :param weight_reg: weight regularizer
+    :param bias_init: bias initializer
+    :param bias_reg: bias regularizer
     :param device: where to perform operation on
+    :param is_training: whether training the model
     :return: arg_scope
     """
     with arg_scope([conv2d, fully_connected],
                    batch_norm=False, activate=tf.nn.relu,
-                   reg=l2_regularizer(weight_decay)):
-        with arg_scope([conv2d], padding='SAME') as arg_sc:
-            with arg_scope([batch_norm2d, drop_out], is_training=True):
-                with arg_scope([get_variable], device=device):
+                   weight_init=weight_init, weight_reg=weight_reg,
+                   bias_init=bias_init, bias_reg=bias_reg):
+        with arg_scope([conv2d], padding='SAME'):
+            with arg_scope([drop_out], is_training=True):
+                with arg_scope([get_variable], device=device) as arg_sc:
                     return arg_sc
 
 

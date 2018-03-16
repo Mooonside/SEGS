@@ -2,14 +2,27 @@
 Wrapping Functions for Common Use
 Written by Yifeng-Chen
 """
+
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.training.moving_averages import assign_moving_average
+
+LOSS_COLLECTIONS = tf.GraphKeys.LOSSES
+TRAINABLE_VARIABLES = tf.GraphKeys.TRAINABLE_VARIABLES
+GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
 
 var_scope = tf.variable_scope
 arg_scope = tf.contrib.framework.arg_scope
 add_to_collection = tf.add_to_collection
 add_arg_scope = tf.contrib.framework.add_arg_scope
+
+weight_collections = 'weights_collections'
+bias_collections = 'bias_collections'
+batch_norm_collections = 'batch_norm_collections'
+
+WEIGHT_COLLECTIONS = [weight_collections, TRAINABLE_VARIABLES, GLOBAL_VARIABLES]
+BIAS_COLLECTIONS = [bias_collections, TRAINABLE_VARIABLES, GLOBAL_VARIABLES]
+BN_COLLECTIONS = [batch_norm_collections, TRAINABLE_VARIABLES, GLOBAL_VARIABLES]
 
 
 @add_arg_scope
@@ -34,7 +47,9 @@ def get_variable(name, shape, dtype=tf.float32, device='0', init=None, reg=None,
 
 @add_arg_scope
 def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, padding='SAME',
-           activate=tf.nn.relu, batch_norm=True, init=None, reg=None, outputs_collections=None):
+           activate=tf.nn.relu, batch_norm=True,
+           weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer, bias_reg=None,
+           outputs_collections=None):
     """
     Wrapper for Conv layers
     :param inputs: [N, H, W, C]
@@ -46,8 +61,10 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
     :param padding: padding mode
     :param activate: activate function
     :param batch_norm: whether performs batch norm
-    :param init: initializer for filters
-    :param reg: regularization for filters
+    :param weight_init: weight initializer
+    :param weight_reg: weight regularizer
+    :param bias_init: bias initializer
+    :param bias_reg: bias regularizer
     :param outputs_collections: add result to some collection
     :return: convolution after activation
     """
@@ -55,9 +72,10 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
 
     with tf.variable_scope(name, 'conv'):
         filters = get_variable(name='weights', shape=ksize + [indim, outc],
-                               init=init, reg=reg)
+                               init=weight_init, reg=weight_reg, collections=WEIGHT_COLLECTIONS)
         if not batch_norm:
-            biases = get_variable(name='biases', shape=[outc], init=tf.zeros_initializer)
+            biases = get_variable(name='biases', shape=[outc], init=bias_init, reg=bias_reg,
+                                  collections=BIAS_COLLECTIONS)
 
     conv = tf.nn.conv2d(input=inputs,
                         filter=filters,
@@ -82,25 +100,28 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
 
 
 @add_arg_scope
-def fully_connected(inputs, outc, name='None',
-                    activate=tf.nn.relu, init=None, reg=None, outputs_collections=None):
+def fully_connected(inputs, outc, name='None', activate=tf.nn.relu,
+                    weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer, bias_reg=None,
+                    outputs_collections=None):
     """
     Wrapper for FC layers
     :param inputs: [N, H, W, C]
     :param outc: output channels
     :param name: var_scope & operation name
     :param activate: activate function
-    :param init: initializer for filters
-    :param reg: regularization for filters
+    :param weight_init: weight initializer
+    :param weight_reg: weight regularizer
+    :param bias_init: bias initializer
+    :param bias_reg: bias regularizer
     :param outputs_collections: add result to some collection
     :return:
     """
     indim = tensor_shape(inputs)[-1]
     with tf.variable_scope(name, 'fully_connected'):
         weights = get_variable(name='weights', shape=[indim, outc],
-                               init=init, reg=reg)
+                               init=weight_init, reg=weight_reg, collections=WEIGHT_COLLECTIONS)
         biases = get_variable(name='biases', shape=[outc],
-                              init=tf.zeros_initializer)
+                              init=bias_init, reg=bias_reg, collections=BIAS_COLLECTIONS)
 
     dense = tf.tensordot(inputs, weights, axes=[[-1], [0]]) + biases
     tf.add_to_collection(outputs_collections, dense)
@@ -175,10 +196,10 @@ def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, na
 
         mean, variance = tf.cond(tf.constant(is_training), mean_var_with_update, lambda: (moving_mean, moving_variance))
         if affine:
-            beta = tf.get_variable('beta', params_shape,
-                                   initializer=tf.zeros_initializer)
-            gamma = tf.get_variable('gamma', params_shape,
-                                    initializer=tf.ones_initializer)
+            beta = tf.get_variable('beta', params_shape, initializer=tf.zeros_initializer,
+                                   collections=BN_COLLECTIONS)
+            gamma = tf.get_variable('gamma', params_shape, initializer=tf.ones_initializer,
+                                    collections=BN_COLLECTIONS)
             outputs = tf.nn.batch_normalization(inputs, mean, variance, beta, gamma, eps)
         else:
             outputs = tf.nn.batch_normalization(inputs, mean, variance, None, None, eps)
@@ -186,17 +207,13 @@ def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, na
 
 
 @add_arg_scope
-def l2_regularizer(scale, scope=None):
-    """
-    a simple wrapper for l2 norm
-    :param scale: punishment weight
-    :param scope: operation name
-    :return: a regularization function
-    """
-    return tf.contrib.layers.l2_regularizer(
-        scale,
-        scope=scope
-    )
+def regularizer(mode, scale, scope=None):
+    if mode is None or scale is None:
+        return None
+    if mode.lower() == 'l2':
+        return tf.contrib.layers.l2_regularizer(scale=scale, scope=scope)
+    if mode.lower() == 'l1':
+        return tf.contrib.layers.l1_regularizer(scale=scale, scope=scope)
 
 
 @add_arg_scope
@@ -205,13 +222,13 @@ def trans_conv2d(inputs, outc, ksize, output_shape, strides=[1, 1], padding='SAM
     with tf.variable_scope(name, 'trans_conv'):
         indim = tensor_shape(inputs)[-1]
         filters = get_variable(name='weights', shape=ksize + [outc, indim],
-                               init=init, reg=reg)
+                               init=init, reg=reg, collections=WEIGHT_COLLECTIONS)
 
     trans_conv = tf.nn.conv2d_transpose(
         inputs,
         filters,
         output_shape,
-        strides,
+        strides=[1] + strides + [1],
         padding=padding,
         name=name
     )
@@ -238,3 +255,30 @@ def crop(small, big):
 
     crop = tf.slice(big, start, size)
     return crop
+
+
+@add_arg_scope
+def arg_max(tensors, axis, out_type=tf.int32, keep_dim=True, name=None):
+    if keep_dim:
+        return tf.expand_dims(tf.argmax(tensors, axis=axis, output_type=out_type), axis=-1, name=name)
+    else:
+        return tf.argmax(tensors, axis=tensors, name=name, output_type=out_type)
+
+
+@add_arg_scope
+def softmax_with_logits(predictions, labels):
+    """
+    a loss vector [N*H*W, ]
+    :param predictions: [N, H, W, c]
+    :param labels: [N ,H, W, 1] int32
+    :return: a [N*H*W] loss
+    """
+    dim = tensor_shape(predictions)[-1]
+
+    logits = tf.reshape(predictions, shape=[-1, dim])
+    labels = tf.one_hot(tf.reshape(labels, [-1]), depth=dim)
+    labels = tf.stop_gradient(labels)
+    loss = tf.nn.softmax_cross_entropy_with_logits_v2(
+        labels=logits, logits=labels, name='sample_wise_loss')
+    tf.add_to_collection(LOSS_COLLECTIONS, loss)
+    return loss

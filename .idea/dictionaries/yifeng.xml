@@ -4,6 +4,8 @@
       <w>conv</w>
       <w>deconv</w>
       <w>ksize</w>
+      <w>regularizer</w>
+      <w>softmax</w>
     </words>
   </dictionary>
 </component>
