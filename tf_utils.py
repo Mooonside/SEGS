@@ -50,6 +50,13 @@ def rename_vars_in_ckpt(ckpt_path, name_map, output_path):
 
 
 def partial_restore(sess, cur_var_lists, ckpt_path):
+    """
+    return an assign op that restoring existing vars in checkpoint
+    :param sess: current session
+    :param cur_var_lists: variables trying to restore
+    :param ckpt_path: checkpoint path
+    :return: an assignment function
+    """
     reader = pywrap_tensorflow.NewCheckpointReader(ckpt_path)
     # var_to_dtype_map = reader.get_variable_to_dtype_map()
     var_to_shape_map = reader.get_variable_to_shape_map()
