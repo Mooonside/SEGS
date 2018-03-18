@@ -279,6 +279,6 @@ def softmax_with_logits(predictions, labels):
     labels = tf.one_hot(tf.reshape(labels, [-1]), depth=dim)
     labels = tf.stop_gradient(labels)
     loss = tf.nn.softmax_cross_entropy_with_logits_v2(
-        labels=logits, logits=labels, name='sample_wise_loss')
+        logits=logits, labels=labels, name='sample_wise_loss')
     tf.add_to_collection(LOSS_COLLECTIONS, loss)
     return loss

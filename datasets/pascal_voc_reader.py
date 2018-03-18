@@ -37,8 +37,8 @@ from tensorflow.python.ops import image_ops
 FLAGS = None
 
 # Constants used for dealing with the files, matches convert_to_records.
-TRAIN_DIR = '/home/yifeng/Desktop/pascal_voc_2012/tf_records/train'
-VALIDATION_DIR = '/home/yifeng/Desktop/pascal_voc_2012/tf_records/val'
+TRAIN_DIR = '/mnt/disk/chenyifeng/VOC2012/tf_records/tf_records/train'
+VALIDATION_DIR = '/mnt/disk/chenyifeng/VOC2012/tf_records/tf_records/val'
 
 
 def decode(serialized_example):

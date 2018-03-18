@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BookmarkManager">
+    <bookmark url="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/summary/summary.py" line="104" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="af3257ac-3942-4331-b80e-62e36a6c3545" name="Default" comment="">
+      <change beforePath="" afterPath="$PROJECT_DIR$/datasets/pascal_voc_utils.py" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/debug.py" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/tf_ops/visualize.py" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/datasets/pascal_voc_reader.py" afterPath="$PROJECT_DIR$/datasets/pascal_voc_reader.py" />
+      <change beforePath="$PROJECT_DIR$/datasets/pasval_voc_writer.py" afterPath="$PROJECT_DIR$/datasets/pasval_voc_writer.py" />
+      <change beforePath="$PROJECT_DIR$/tf_ops/wrap_ops.py" afterPath="$PROJECT_DIR$/tf_ops/wrap_ops.py" />
+      <change beforePath="$PROJECT_DIR$/tf_utils.py" afterPath="$PROJECT_DIR$/tf_utils.py" />
+      <change beforePath="$PROJECT_DIR$/train.py" afterPath="$PROJECT_DIR$/train.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -15,8 +25,9 @@
   <component name="CoverageDataManager">
     <SUITE FILE_PATH="coverage/SEGS$wrap_ops.coverage" NAME="wrap_ops Coverage Results" MODIFIED="1521185830023" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tf_ops" />
     <SUITE FILE_PATH="coverage/SEGS$tf_utils.coverage" NAME="tf_utils Coverage Results" MODIFIED="1520851510026" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/SEGS$train.coverage" NAME="train Coverage Results" MODIFIED="1521190228439" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/SEGS$train.coverage" NAME="train Coverage Results" MODIFIED="1521277709197" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/SEGS$fcn.coverage" NAME="fcn Coverage Results" MODIFIED="1521183408526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/segs" />
+    <SUITE FILE_PATH="coverage/SEGS$debug.coverage" NAME="debug Coverage Results" MODIFIED="1521356057467" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/SEGS$tf_record_writer.coverage" NAME="tf_record_writer Coverage Results" MODIFIED="1520943478158" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/preproc" />
     <SUITE FILE_PATH="coverage/SEGS$vgg_16.coverage" NAME="vgg_16 Coverage Results" MODIFIED="1521091955143" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backbones" />
     <SUITE FILE_PATH="coverage/SEGS$pasval_voc_writer.coverage" NAME="pasval_voc_writer Coverage Results" MODIFIED="1520951767157" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/datasets" />
@@ -27,100 +38,35 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="pascal_voc_reader.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/datasets/pascal_voc_reader.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1134">
-              <caret line="87" column="14" lean-forward="true" selection-start-line="87" selection-start-column="14" selection-end-line="87" selection-end-column="14" />
-              <folding>
-                <element signature="e#1050#1088#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="gen_image_ops.py" pinned="false" current-in-tab="false">
-        <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/gen_image_ops.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="162">
-              <caret line="1587" column="4" lean-forward="false" selection-start-line="1587" selection-start-column="4" selection-end-line="1587" selection-end-column="4" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="dataset_ops.py" pinned="false" current-in-tab="false">
-        <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/data/ops/dataset_ops.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="162">
-              <caret line="789" column="0" lean-forward="false" selection-start-line="789" selection-start-column="0" selection-end-line="789" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="function.py" pinned="false" current-in-tab="false">
-        <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/function.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="162">
-              <caret line="490" column="0" lean-forward="false" selection-start-line="490" selection-start-column="0" selection-end-line="490" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ops.py" pinned="false" current-in-tab="false">
-        <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/ops.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-3070">
-              <caret line="3144" column="0" lean-forward="false" selection-start-line="3144" selection-start-column="0" selection-end-line="3144" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="pasval_voc_writer.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/datasets/pasval_voc_writer.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1098">
-              <caret line="66" column="0" lean-forward="false" selection-start-line="66" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="vgg_16.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/backbones/vgg_16.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1494">
-              <caret line="109" column="45" lean-forward="false" selection-start-line="109" selection-start-column="44" selection-end-line="109" selection-end-column="45" />
-              <caret line="110" column="45" lean-forward="false" selection-start-line="110" selection-start-column="44" selection-end-line="110" selection-end-column="45" />
-              <caret line="111" column="45" lean-forward="false" selection-start-line="111" selection-start-column="44" selection-end-line="111" selection-end-column="45" />
-              <caret line="112" column="45" lean-forward="false" selection-start-line="112" selection-start-column="44" selection-end-line="112" selection-end-column="45" />
-              <folding>
-                <element signature="e#1855#3539#1" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="wrap_ops.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/tf_ops/wrap_ops.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1129">
-              <caret line="215" column="66" lean-forward="true" selection-start-line="215" selection-start-column="66" selection-end-line="215" selection-end-column="66" />
-              <folding>
-                <element signature="e#66#84#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="train.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="train.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="387">
-              <caret line="116" column="50" lean-forward="true" selection-start-line="116" selection-start-column="50" selection-end-line="116" selection-end-column="50" />
+            <state relative-caret-position="378">
+              <caret line="54" column="49" lean-forward="false" selection-start-line="54" selection-start-column="49" selection-end-line="54" selection-end-column="49" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="tf_utils.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/tf_utils.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="423">
+              <caret line="68" column="0" lean-forward="true" selection-start-line="68" selection-start-column="0" selection-end-line="68" selection-end-column="0" />
+              <folding>
+                <element signature="e#0#23#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="saver.py" pinned="false" current-in-tab="false">
+        <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/training/saver.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="255">
+              <caret line="1167" column="26" lean-forward="false" selection-start-line="1167" selection-start-column="15" selection-end-line="1167" selection-end-column="26" />
               <folding />
             </state>
           </provider>
@@ -151,6 +97,11 @@
       <find>print</find>
       <find>set_parameter</find>
       <find>collections</find>
+      <find>resha</find>
+      <find>reshape_size</find>
+      <find>summaries_dir</find>
+      <find>pretrained_ckpts</find>
+      <find>_var_list</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -166,18 +117,21 @@
       <list>
         <option value="$PROJECT_DIR$/valid.py" />
         <option value="$PROJECT_DIR$/test.py" />
-        <option value="$PROJECT_DIR$/tf_utils.py" />
         <option value="$PROJECT_DIR$/preproc/tf_record_reader.py" />
         <option value="$PROJECT_DIR$/preproc/tf_record_writer.py" />
-        <option value="$PROJECT_DIR$/datasets/pasval_voc_writer.py" />
         <option value="$PROJECT_DIR$/backbones/backbone_factory.py" />
         <option value="$PROJECT_DIR$/tf_ops/benchmarks.py" />
         <option value="$PROJECT_DIR$/segs/factory.py" />
         <option value="$PROJECT_DIR$/segs/fcn.py" />
         <option value="$PROJECT_DIR$/backbones/vgg_16.py" />
-        <option value="$PROJECT_DIR$/tf_ops/wrap_ops.py" />
-        <option value="$PROJECT_DIR$/train.py" />
+        <option value="$PROJECT_DIR$/datasets/pasval_voc_writer.py" />
+        <option value="$PROJECT_DIR$/datasets/pascal_voc_utils.py" />
         <option value="$PROJECT_DIR$/datasets/pascal_voc_reader.py" />
+        <option value="$PROJECT_DIR$/tf_ops/visualize.py" />
+        <option value="$PROJECT_DIR$/tf_ops/wrap_ops.py" />
+        <option value="$PROJECT_DIR$/debug.py" />
+        <option value="$PROJECT_DIR$/tf_utils.py" />
+        <option value="$PROJECT_DIR$/train.py" />
       </list>
     </option>
   </component>
@@ -194,9 +148,9 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-265" />
-    <option name="y" value="318" />
-    <option name="width" value="1680" />
+    <option name="x" value="-60" />
+    <option name="y" value="-4" />
+    <option name="width" value="1740" />
     <option name="height" value="1054" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
@@ -257,6 +211,11 @@
               <item name="SEGS" type="462c0819:PsiDirectoryNode" />
               <item name="segs" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="SEGS" type="b2602c69:ProjectViewProjectNode" />
+              <item name="SEGS" type="462c0819:PsiDirectoryNode" />
+              <item name="tf_ops" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -266,11 +225,19 @@
   </component>
   <component name="PropertiesComponent">
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
-    <property name="settings.editor.selected.configurable" value="configurable.group.project" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$USER_HOME$/Desktop/FCN.tensorflow-master" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
     <property name="SearchEverywhereHistoryKey" value="&#9;FILE&#9;file:///home/yifeng/SEGS/tf_ops/wrap_ops.py" />
+  </component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings module-name="SEGS" is-module-sdk="true">
+        <option name="myUseModuleSdk" value="true" />
+        <option name="myModuleName" value="SEGS" />
+      </console-settings>
+    </option>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -284,7 +251,26 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.train">
+  <component name="RunManager" selected="Python.debug">
+    <configuration name="debug" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="SEGS" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/debug.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+    </configuration>
     <configuration name="fcn" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -342,25 +328,6 @@
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
-    <configuration name="vgg_16" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backbones" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="SEGS" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backbones/vgg_16.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-    </configuration>
     <configuration name="wrap_ops" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -381,19 +348,19 @@
       <option name="MODULE_MODE" value="false" />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.vgg_16" />
-      <item index="1" class="java.lang.String" itemvalue="Python.pascal_voc_reader" />
-      <item index="2" class="java.lang.String" itemvalue="Python.fcn" />
-      <item index="3" class="java.lang.String" itemvalue="Python.train" />
-      <item index="4" class="java.lang.String" itemvalue="Python.wrap_ops" />
+      <item index="0" class="java.lang.String" itemvalue="Python.pascal_voc_reader" />
+      <item index="1" class="java.lang.String" itemvalue="Python.fcn" />
+      <item index="2" class="java.lang.String" itemvalue="Python.train" />
+      <item index="3" class="java.lang.String" itemvalue="Python.wrap_ops" />
+      <item index="4" class="java.lang.String" itemvalue="Python.debug" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.train" />
-        <item index="1" class="java.lang.String" itemvalue="Python.wrap_ops" />
-        <item index="2" class="java.lang.String" itemvalue="Python.fcn" />
-        <item index="3" class="java.lang.String" itemvalue="Python.pascal_voc_reader" />
-        <item index="4" class="java.lang.String" itemvalue="Python.vgg_16" />
+        <item index="0" class="java.lang.String" itemvalue="Python.debug" />
+        <item index="1" class="java.lang.String" itemvalue="Python.train" />
+        <item index="2" class="java.lang.String" itemvalue="Python.wrap_ops" />
+        <item index="3" class="java.lang.String" itemvalue="Python.fcn" />
+        <item index="4" class="java.lang.String" itemvalue="Python.pascal_voc_reader" />
       </list>
     </recent_temporary>
   </component>
@@ -436,7 +403,14 @@
       <option name="project" value="LOCAL" />
       <updated>1521188954583</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="update train &amp; fix bugs">
+      <created>1521190301941</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1521190301941</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -445,10 +419,10 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3288889" sideWeight="0.50244796" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.497552" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3288889" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3288889" sideWeight="0.497552" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3292683" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3512852" sideWeight="0.4859504" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3288889" sideWeight="0.497552" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3288889" sideWeight="0.497552" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3288889" sideWeight="0.49632803" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.37086904" sideWeight="0.4859504" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="SciView" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -492,65 +466,11 @@
           <option name="timeStamp" value="51" />
         </line-breakpoint>
       </breakpoints>
-      <option name="time" value="56" />
+      <option name="time" value="61" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/preproc/tf_record_writer.py" />
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/data/ops/readers.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="20">
-          <caret line="79" column="6" lean-forward="false" selection-start-line="79" selection-start-column="6" selection-end-line="79" selection-end-column="6" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/skimage/data/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="288">
-          <caret line="90" column="22" lean-forward="false" selection-start-line="90" selection-start-column="22" selection-end-line="90" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/datasets/1.png" />
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/skimage/io/_io.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-187">
-          <caret line="106" column="4" lean-forward="false" selection-start-line="106" selection-start-column="4" selection-end-line="106" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/gen_parsing_ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="230" column="39" lean-forward="false" selection-start-line="230" selection-start-column="39" selection-end-line="230" selection-end-column="39" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/parsing_ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1890">
-          <caret line="214" column="30" lean-forward="true" selection-start-line="214" selection-start-column="30" selection-end-line="214" selection-end-column="30" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/image_ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-350">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/preproc/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/tensor_shape.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="170">
@@ -562,7 +482,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="100" column="17" lean-forward="true" selection-start-line="100" selection-start-column="17" selection-end-line="100" selection-end-column="17" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -584,21 +503,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tf_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="538">
-          <caret line="59" column="0" lean-forward="false" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -654,15 +558,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="191">
           <caret line="240" column="6" lean-forward="false" selection-start-line="240" selection-start-column="6" selection-end-line="240" selection-end-column="6" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/math_ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="191">
-          <caret line="1445" column="4" lean-forward="false" selection-start-line="1445" selection-start-column="4" selection-end-line="1445" selection-end-column="4" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -678,17 +573,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
           <caret line="182" column="0" lean-forward="false" selection-start-line="182" selection-start-column="0" selection-end-line="182" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/training/optimizer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="183">
-          <caret line="177" column="4" lean-forward="false" selection-start-line="177" selection-start-column="4" selection-end-line="177" selection-end-column="4" />
-          <folding>
-            <element signature="e#6411#34254#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -696,15 +580,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="83">
           <caret line="32" column="6" lean-forward="false" selection-start-line="32" selection-start-column="6" selection-end-line="32" selection-end-column="6" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/training/momentum.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="191">
-          <caret line="45" column="6" lean-forward="false" selection-start-line="45" selection-start-column="6" selection-end-line="45" selection-end-column="6" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -716,19 +591,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/variables.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="623">
-          <caret line="133" column="6" lean-forward="false" selection-start-line="133" selection-start-column="6" selection-end-line="133" selection-end-column="6" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/gen_nn_ops.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-457">
           <caret line="783" column="9" lean-forward="false" selection-start-line="783" selection-start-column="2" selection-end-line="783" selection-end-column="9" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -744,7 +610,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="21">
           <caret line="2098" column="4" lean-forward="false" selection-start-line="2098" selection-start-column="4" selection-end-line="2098" selection-end-column="4" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -756,19 +621,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/datasets/1.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/segs/fcn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1240">
-          <caret line="167" column="23" lean-forward="true" selection-start-line="167" selection-start-column="23" selection-end-line="167" selection-end-column="23" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/datasets/1.jpg" />
     <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/client/session.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="191">
@@ -777,58 +630,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/segs/factory.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="5" column="22" lean-forward="false" selection-start-line="5" selection-start-column="15" selection-end-line="5" selection-end-column="22" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.PyCharm2017.3/system/python_stubs/1238484802/builtins.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="191">
           <caret line="4427" column="8" lean-forward="false" selection-start-line="4427" selection-start-column="8" selection-end-line="4427" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/train.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="387">
-          <caret line="116" column="50" lean-forward="true" selection-start-line="116" selection-start-column="50" selection-end-line="116" selection-end-column="50" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tf_ops/wrap_ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1129">
-          <caret line="215" column="66" lean-forward="true" selection-start-line="215" selection-start-column="66" selection-end-line="215" selection-end-column="66" />
-          <folding>
-            <element signature="e#66#84#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/backbones/vgg_16.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1494">
-          <caret line="109" column="45" lean-forward="false" selection-start-line="109" selection-start-column="44" selection-end-line="109" selection-end-column="45" />
-          <caret line="110" column="45" lean-forward="false" selection-start-line="110" selection-start-column="44" selection-end-line="110" selection-end-column="45" />
-          <caret line="111" column="45" lean-forward="false" selection-start-line="111" selection-start-column="44" selection-end-line="111" selection-end-column="45" />
-          <caret line="112" column="45" lean-forward="false" selection-start-line="112" selection-start-column="44" selection-end-line="112" selection-end-column="45" />
-          <folding>
-            <element signature="e#1855#3539#1" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/datasets/pasval_voc_writer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1098">
-          <caret line="66" column="0" lean-forward="false" selection-start-line="66" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -852,15 +657,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
           <caret line="490" column="0" lean-forward="false" selection-start-line="490" selection-start-column="0" selection-end-line="490" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/data/ops/dataset_ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="162">
-          <caret line="789" column="0" lean-forward="false" selection-start-line="789" selection-start-column="0" selection-end-line="789" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -868,16 +664,200 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
           <caret line="1587" column="4" lean-forward="false" selection-start-line="1587" selection-start-column="4" selection-end-line="1587" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/segs/factory.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="90">
+          <caret line="5" column="22" lean-forward="false" selection-start-line="5" selection-start-column="15" selection-end-line="5" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/backbones/vgg_16.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="792">
+          <caret line="48" column="30" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="145" selection-end-column="0" />
+          <folding>
+            <element signature="e#1855#3539#1" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/segs/fcn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="513">
+          <caret line="167" column="23" lean-forward="false" selection-start-line="167" selection-start-column="23" selection-end-line="167" selection-end-column="23" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datasets/pasval_voc_writer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="20" column="23" lean-forward="false" selection-start-line="20" selection-start-column="23" selection-end-line="20" selection-end-column="23" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/summary/writer/writer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="543">
+          <caret line="118" column="26" lean-forward="false" selection-start-line="118" selection-start-column="11" selection-end-line="118" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/data/ops/dataset_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="191">
+          <caret line="774" column="6" lean-forward="false" selection-start-line="774" selection-start-column="6" selection-end-line="774" selection-end-column="6" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/summary/summary.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="183">
+          <caret line="76" column="4" lean-forward="false" selection-start-line="76" selection-start-column="4" selection-end-line="76" selection-end-column="4" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/math_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="1444" column="48" lean-forward="false" selection-start-line="1444" selection-start-column="40" selection-end-line="1444" selection-end-column="48" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/datasets/pascal_voc_reader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1134">
-          <caret line="87" column="14" lean-forward="true" selection-start-line="87" selection-start-column="14" selection-end-line="87" selection-end-column="14" />
+        <state relative-caret-position="1755">
+          <caret line="148" column="0" lean-forward="true" selection-start-line="148" selection-start-column="0" selection-end-line="148" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datasets/pascal_voc_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="396">
+          <caret line="22" column="45" lean-forward="true" selection-start-line="22" selection-start-column="45" selection-end-line="22" selection-end-column="45" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tf_ops/visualize.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="144">
+          <caret line="8" column="40" lean-forward="false" selection-start-line="8" selection-start-column="40" selection-end-line="8" selection-end-column="40" />
           <folding>
-            <element signature="e#1050#1088#0" expanded="true" />
+            <element signature="e#0#23#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/training/momentum.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="191">
+          <caret line="45" column="6" lean-forward="false" selection-start-line="45" selection-start-column="6" selection-end-line="45" selection-end-column="6" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/training/optimizer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-4785">
+          <caret line="468" column="6" lean-forward="false" selection-start-line="468" selection-start-column="6" selection-end-line="468" selection-end-column="6" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/debug.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="747">
+          <caret line="154" column="26" lean-forward="true" selection-start-line="154" selection-start-column="26" selection-end-line="154" selection-end-column="26" />
+          <folding>
+            <element signature="e#0#9#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/state_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="191">
+          <caret line="251" column="35" lean-forward="false" selection-start-line="251" selection-start-column="35" selection-end-line="251" selection-end-column="35" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/summary_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-513">
+          <caret line="32" column="4" lean-forward="false" selection-start-line="32" selection-start-column="4" selection-end-line="32" selection-end-column="4" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datasets/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tf_ops/wrap_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="279">
+          <caret line="275" column="29" lean-forward="false" selection-start-line="275" selection-start-column="29" selection-end-line="275" selection-end-column="29" />
+          <folding>
+            <element signature="e#66#84#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/ops/variables.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="29">
+          <caret line="1370" column="4" lean-forward="false" selection-start-line="1370" selection-start-column="4" selection-end-line="1370" selection-end-column="4" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tf_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="423">
+          <caret line="68" column="0" lean-forward="true" selection-start-line="68" selection-start-column="0" selection-end-line="68" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/anaconda3/lib/python3.6/site-packages/tensorflow/python/training/saver.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="1167" column="26" lean-forward="false" selection-start-line="1167" selection-start-column="15" selection-end-line="1167" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="378">
+          <caret line="54" column="49" lean-forward="false" selection-start-line="54" selection-start-column="49" selection-end-line="54" selection-end-column="49" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
           </folding>
         </state>
       </provider>

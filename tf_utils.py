@@ -51,9 +51,20 @@ def rename_vars_in_ckpt(ckpt_path, name_map, output_path):
 
 def partial_restore(sess, cur_var_lists, ckpt_path):
     reader = pywrap_tensorflow.NewCheckpointReader(ckpt_path)
-    var_to_dtype_map = reader.get_variable_to_dtype_map()
-    var_names = set(var_to_dtype_map.keys())
-    var_names = var_names.intersection(set(cur_var_lists))
-    saver = tf.train.Saver(var_list=var_names)
-    saver.restore(sess, ckpt_path)
+    # var_to_dtype_map = reader.get_variable_to_dtype_map()
+    var_to_shape_map = reader.get_variable_to_shape_map()
 
+    assign_op = []
+    for var in list(cur_var_lists):
+        name = var.name.rstrip(':0')
+        if name not in var_to_shape_map.keys():
+            continue
+
+        if var_to_shape_map[name] != var.shape:
+            print("{} shape disagrees, lhs {}, rhs {}. So deserted.".
+                  format(var.name, var_to_shape_map[name], var.shape))
+            continue
+        op = tf.assign(var, reader.get_tensor(name))
+        assign_op.append(op)
+
+    return tf.group(assign_op)
