@@ -58,7 +58,6 @@ def partial_restore(sess, cur_var_lists, ckpt_path):
     :return: an assignment function
     """
     reader = pywrap_tensorflow.NewCheckpointReader(ckpt_path)
-    # var_to_dtype_map = reader.get_variable_to_dtype_map()
     var_to_shape_map = reader.get_variable_to_shape_map()
 
     assign_op = []
@@ -68,10 +67,28 @@ def partial_restore(sess, cur_var_lists, ckpt_path):
             continue
 
         if var_to_shape_map[name] != var.shape:
-            print("{} shape disagrees, lhs {}, rhs {}. So deserted.".
+            print('{} shape disagrees, lhs {}, rhs {}. So deserted.'.
                   format(var.name, var_to_shape_map[name], var.shape))
             continue
+        print('Restoring {}'.format(var.name))
         op = tf.assign(var, reader.get_tensor(name))
         assign_op.append(op)
 
     return tf.group(assign_op)
+
+
+def add_gradient_summary(grad, var):
+    if grad is not None:
+        tf.summary.histogram(var.op.name + "/gradient", grad)
+
+
+def add_var_summary(var):
+    if var is not None:
+        tf.summary.histogram(var.name + "/value", var)
+        tf.summary.scalar(var.name + "/sparsity", tf.nn.zero_fraction(var))
+
+
+def add_activation_summary(var):
+    if var is not None:
+        tf.summary.histogram(var.op.name + "/activation", var)
+        tf.summary.scalar(var.op.name + "/sparsity", tf.nn.zero_fraction(var))
