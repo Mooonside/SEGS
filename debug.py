@@ -26,7 +26,7 @@ tf.app.flags.DEFINE_float('momentum', 0.99, 'momentum')
 
 # deploy configs
 tf.app.flags.DEFINE_string('store_device', 'cpu', 'where to place the variables')
-tf.app.flags.DEFINE_string('run_device', '0', 'where to run the models')
+tf.app.flags.DEFINE_string('run_device', 'cpu', 'where to run the models')
 # tf.app.flags.DEFINE_string('run_device', 'cpu', 'where to run the models')
 tf.app.flags.DEFINE_float('gpu_fraction', 0.8, 'gpu memory fraction')
 tf.app.flags.DEFINE_boolean('allow_growth', True, 'allow memory growth')
@@ -38,7 +38,7 @@ tf.app.flags.DEFINE_float('bias_reg_scale', None, 'bias regularization scale')
 tf.app.flags.DEFINE_string('bias_reg_func', None, 'use which func to regularize bias')
 
 # model save configs
-tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS',
+tf.app.flags.DEFINE_string('summaries_dir', '/home/yifeng/TF_Logs/SEGS',
                            'where to store summary log')
 
 FLAGS = tf.app.flags.FLAGS
@@ -142,14 +142,12 @@ step = 0
 try:
     sess.run(tf.global_variables_initializer())
     while True:  # train until OutOfRangeError
-        name, summary, _ = sess.run([name_batch, merge_summary, global_step])
+        image, summary, _ = sess.run([image_batch, merge_summary, global_step])
         train_writer.add_summary(summary, step)
         step += 1
         print('Correct {}'.format(step))
+        print(image)
+
 
 except tf.errors.OutOfRangeError:
     print('Done training')
-
-except tf.errors.InvalidArgumentError:
-    print(step)
-    print(name)

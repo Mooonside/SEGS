@@ -21,3 +21,4 @@ pascal_voc_palette = np.array([[0, 0, 0],
                                [0, 192, 0],
                                [128, 192, 0],
                                [0, 64, 128]], dtype='uint8')
+

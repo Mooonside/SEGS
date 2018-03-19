@@ -19,7 +19,7 @@ tf.app.flags.DEFINE_string('net_name', 'fcn8', 'which segmentation net to use')
 tf.app.flags.DEFINE_integer('num_classes', 21, '#classes')
 
 # learning configs
-tf.app.flags.DEFINE_integer('epoch_nums', 10, 'epoch_nums')
+tf.app.flags.DEFINE_integer('epoch_num', 10, 'epoch_nums')
 tf.app.flags.DEFINE_integer('batch_size', 16, 'batch size')
 tf.app.flags.DEFINE_float('weight_learning_rate', 1e-3, 'weight learning rate')
 tf.app.flags.DEFINE_float('bias_learning_rate', None, 'bias learning rate')
@@ -81,7 +81,7 @@ global_step = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64
 # read data
 reshape_size = [FLAGS.reshape_height, FLAGS.reshape_weight]
 name_batch, image_batch, label_batch = pascal_inputs(
-    dir=FLAGS.data_dir, batch_size=FLAGS.batch_size, num_epochs=1, reshape_size=reshape_size)
+    dir=FLAGS.data_dir, batch_size=FLAGS.batch_size, num_epochs=FLAGS.epoch_num, reshape_size=reshape_size)
 
 weight_reg = regularizer(mode=FLAGS.weight_reg_func, scale=FLAGS.weight_reg_scale)
 bias_reg = regularizer(mode=FLAGS.bias_reg_func, scale=FLAGS.bias_reg_scale)

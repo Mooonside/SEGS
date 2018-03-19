@@ -83,8 +83,7 @@ def augment(name, image, label):
 
 def normalize(name, image, label):
     # Convert from [0, 255] -> [-0.5, 0.5] floats.
-    # image = tf.cast(image, tf.float32) * (1. / 255) - 0.5
-
+    image = tf.cast(image, tf.float32) * (1. / 255) - 0.5
     return name, image, label
 
 
@@ -149,6 +148,7 @@ def pascal_inputs(dir, batch_size, num_epochs, reshape_size, padding='SAME'):
         iterator = dataset.make_one_shot_iterator()
 
         name_batch, image_batch, label_batch = iterator.get_next()
+
         label_batch = tf.expand_dims(label_batch, axis=-1)
 
     return name_batch, image_batch, label_batch
