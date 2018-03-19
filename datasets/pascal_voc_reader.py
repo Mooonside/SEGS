@@ -39,6 +39,9 @@ FLAGS = None
 # Constants used for dealing with the files, matches convert_to_records.
 TRAIN_DIR = '/mnt/disk/chenyifeng/VOC2012/tf_records/tf_records/train'
 VALIDATION_DIR = '/mnt/disk/chenyifeng/VOC2012/tf_records/tf_records/val'
+TRAIN_NUM = 10583
+VALID_NUM = 1450
+
 
 
 def decode(serialized_example):
@@ -99,7 +102,7 @@ def cast_type(name, image, label):
     return name, tf.cast(image, tf.float32), tf.cast(label, tf.int32)
 
 
-def pascal_inputs(dir, batch_size, num_epochs, reshape_size):
+def pascal_inputs(dir, batch_size, num_epochs, reshape_size, padding='SAME'):
     """Reads input data num_epochs times.
 
     Args:
@@ -107,6 +110,8 @@ def pascal_inputs(dir, batch_size, num_epochs, reshape_size):
       batch_size: Number of examples per returned batch.
       num_epochs: Number of times to read the input data, or 0/None to
          train forever.
+      padding:  if 'SAME' , have ceil(#samples / batch_size) * epoch_nums batches
+                if 'VALID', have floor(#samples / batch_size) * epoch_nums batches
 
     Returns:
       A tuple (images, labels), where:
@@ -138,13 +143,12 @@ def pascal_inputs(dir, batch_size, num_epochs, reshape_size):
         dataset = dataset.map(set_parameter(reshape, reshape_size=reshape_size))
 
         # the parameter is the queue size
-        # dataset = dataset.shuffle(1000 + 3 * batch_size)
+        dataset = dataset.shuffle(1000 + 3 * batch_size)
         dataset = dataset.batch(batch_size)
 
         iterator = dataset.make_one_shot_iterator()
 
         name_batch, image_batch, label_batch = iterator.get_next()
-        image_batch = tf.reshape(image_batch, [batch_size] + reshape_size + [3])
-        label_batch = tf.reshape(label_batch, [batch_size] + reshape_size + [1])
+        label_batch = tf.expand_dims(label_batch, axis=-1)
 
     return name_batch, image_batch, label_batch

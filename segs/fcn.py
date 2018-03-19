@@ -31,9 +31,8 @@ def fcn_upsample(small, big, ksize=[4, 4], strides=[2, 2], padding='SAME',
     with tf.variable_scope(name, 'fcn_upsample'):
         outc = tensor_shape(small)[-1]
         big = conv2d(big, outc, ksize=[1, 1], activate=None, name='score_conv')
-        big_shape = tensor_shape(big)
-        big_dim = big_shape[-1]
-        trans_conv = trans_conv2d(small, outc=big_dim, ksize=ksize, output_shape=big_shape,
+        big_dim = tensor_shape(big)[-1]
+        trans_conv = trans_conv2d(small, outc=big_dim, ksize=ksize, output_shape=tf.shape(big),
                                   strides=strides, padding=padding)
         summary = trans_conv + big
     tf.add_to_collection(outputs_collections, summary)
@@ -64,7 +63,6 @@ def fcn_arg_scope(weight_init=None, weight_reg=None,
 def fcn_8(inputs, num_classes=21,
           weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer, bias_reg=None,
           device='cpu'):
-    image_shape = tensor_shape(inputs)
 
     with arg_scope(vgg_arg_scope(weight_init, weight_reg, bias_init, bias_reg, device=device)):
         fcn32, end_points = vgg_16(inputs, num_classes=num_classes,
@@ -81,8 +79,10 @@ def fcn_8(inputs, num_classes=21,
             pool3 = end_points['vgg_16/pool3:0']
             fcn8 = fcn_upsample(fcn16, pool3, ksize=[4, 4], name='to_8')
 
+            input_shape = tf.shape(inputs)
+            output_shape = tf.concat([input_shape[:-1], [num_classes]], axis=0)
             fcn1 = trans_conv2d(fcn8, outc=num_classes, ksize=[16, 16], strides=[8, 8],
-                                output_shape=image_shape[:-1] + [num_classes], name='trans_conv/to_1')
+                                output_shape=output_shape, name='trans_conv/to_1')
 
             # print(tf.get_collection(end_points_collection))
             end_points.update(

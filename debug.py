@@ -1,8 +1,6 @@
 import os
 
 from datasets.pascal_voc_reader import pascal_inputs, TRAIN_DIR
-from segs.factory import get_net
-from tf_ops.benchmarks import mAP
 from tf_ops.visualize import paint
 from tf_ops.wrap_ops import *
 
@@ -19,7 +17,7 @@ tf.app.flags.DEFINE_integer('num_classes', 21, '#classes')
 
 # learning configs
 tf.app.flags.DEFINE_integer('epoch_nums', 1, 'epoch_nums')
-tf.app.flags.DEFINE_integer('batch_size', 1, 'batch size')
+tf.app.flags.DEFINE_integer('batch_size', 16, 'batch size')
 tf.app.flags.DEFINE_float('weight_learning_rate', 1e-3, 'weight learning rate')
 tf.app.flags.DEFINE_float('bias_learning_rate', None, 'bias learning rate')
 tf.app.flags.DEFINE_float('clip_grad_by_norm', 5, 'clip_grad_by_norm')
@@ -70,32 +68,33 @@ global_step = tf.Variable(0, trainable=False, name='global_step')
 reshape_size = [FLAGS.reshape_height, FLAGS.reshape_weight]
 name_batch, image_batch, label_batch = pascal_inputs(
     dir=FLAGS.data_dir, batch_size=FLAGS.batch_size, num_epochs=1, reshape_size=reshape_size)
+# name_batch = tf.string_join(tf.split(name_batch, num_or_size_splits=FLAGS.batch_size), separator=' ,')
 
 tf.summary.image('image_batch', image_batch, max_outputs=1)
 tf.summary.image('label_batch', tf.cast(paint(label_batch), tf.uint8), max_outputs=1)
 
-weight_reg = regularizer(mode=FLAGS.weight_reg_func, scale=FLAGS.weight_reg_scale)
-bias_reg = regularizer(mode=FLAGS.bias_reg_func, scale=FLAGS.bias_reg_scale)
-
-# inference
-net = get_net(FLAGS.net_name)
-score_map, endpoints = net(image_batch, num_classes=FLAGS.num_classes,
-                           weight_init=None, weight_reg=weight_reg,
-                           bias_init=tf.zeros_initializer, bias_reg=bias_reg, device=device)
+# weight_reg = regularizer(mode=FLAGS.weight_reg_func, scale=FLAGS.weight_reg_scale)
+# bias_reg = regularizer(mode=FLAGS.bias_reg_func, scale=FLAGS.bias_reg_scale)
+#
+# # inference
+# net = get_net(FLAGS.net_name)
+# score_map, endpoints = net(image_batch, num_classes=FLAGS.num_classes,
+#                            weight_init=None, weight_reg=weight_reg,
+#                            bias_init=tf.zeros_initializer, bias_reg=bias_reg, device=device)
 #
 # # solve for mAP and loss
-class_map = arg_max(score_map, axis=3, name='class_map')
-tf.summary.image('predictions', tf.cast(paint(class_map), tf.uint8), max_outputs=1)
-
-pixel_acc = mAP(class_map, label_batch)
-tf.summary.scalar('pixel_acc', pixel_acc)
+# class_map = arg_max(score_map, axis=3, name='class_map')
+# tf.summary.image('predictions', tf.cast(paint(class_map), tf.uint8), max_outputs=1)
 #
-# # calculate loss
-loss = softmax_with_logits(score_map, label_batch)
-tf.summary.tensor_summary('sample_wise_loss', loss)
-
-mean_loss = tf.reduce_mean(loss, name='mean_loss')
-tf.summary.scalar('mean_loss', mean_loss)
+# pixel_acc = mAP(class_map, label_batch)
+# tf.summary.scalar('pixel_acc', pixel_acc)
+# #
+# # # calculate loss
+# loss = softmax_with_logits(score_map, label_batch)
+# tf.summary.tensor_summary('sample_wise_loss', loss)
+#
+# mean_loss = tf.reduce_mean(loss, name='mean_loss')
+# tf.summary.scalar('mean_loss', mean_loss)
 # reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
 # reg_loss = tf.reduce_sum(reg_losses)
 # total_loss = mean_loss + reg_loss
@@ -139,16 +138,18 @@ tf.summary.scalar('mean_loss', mean_loss)
 merge_summary = tf.summary.merge_all()
 train_writer = tf.summary.FileWriter(FLAGS.summaries_dir, sess.graph)
 
+step = 0
 try:
-    step = 0
     sess.run(tf.global_variables_initializer())
     while True:  # train until OutOfRangeError
-        if step == 100:
-            break
-        summary, mean_loss_v, _ = sess.run([merge_summary, mean_loss, global_step])
+        name, summary, _ = sess.run([name_batch, merge_summary, global_step])
         train_writer.add_summary(summary, step)
-        print("Step {} Mean Loss{}".format(step, mean_loss_v))
         step += 1
+        print('Correct {}'.format(step))
 
 except tf.errors.OutOfRangeError:
     print('Done training')
+
+except tf.errors.InvalidArgumentError:
+    print(step)
+    print(name)

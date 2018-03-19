@@ -168,7 +168,7 @@ def drop_out(inputs, kp_prob, is_training, name=None):
 def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, name=None):
     """
     Do channel-wise batch normalization
-    :param inputs: [N, H, W, C]
+    :param inputs: print(shape1, shape2)
     :param is_training: bool var indicating mode
     :param eps: for stabilize
     :param decay: momentum factor
@@ -219,6 +219,19 @@ def regularizer(mode, scale, scope=None):
 @add_arg_scope
 def trans_conv2d(inputs, outc, ksize, output_shape, strides=[1, 1], padding='SAME',
                  init=None, reg=None, name=None):
+    """
+    Deconvolution result
+    :param inputs: print(shape1, shape2)
+    :param outc: output channels
+    :param ksize: [kh, kw]
+    :param output_shape: a tensor shape [N,H,W,C] , N can be None
+    :param strides: [sh, sw]
+    :param padding:
+    :param init: init for weight
+    :param reg: reg for weight
+    :param name: operation name
+    :return: deconv result
+    """
     with tf.variable_scope(name, 'trans_conv'):
         indim = tensor_shape(inputs)[-1]
         filters = get_variable(name='weights', shape=ksize + [outc, indim],
@@ -269,7 +282,7 @@ def arg_max(tensors, axis, out_type=tf.int32, keep_dim=True, name=None):
 def softmax_with_logits(predictions, labels):
     """
     a loss vector [N*H*W, ]
-    :param predictions: [N, H, W, c]
+    :param predictions: [N, H, W, c], raw outputs of model
     :param labels: [N ,H, W, 1] int32
     :return: a [N*H*W] loss
     """
