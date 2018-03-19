@@ -159,25 +159,26 @@ train_op = optimizer.apply_gradients(weight_grads + bias_grads, global_step=glob
 
 saver = tf.train.Saver(max_to_keep=3)
 
+sess.run(tf.global_variables_initializer())
+
+# initialize
+ckpt = None
+if FLAGS.last_ckpt is None and FLAGS.pretrained_ckpts is not None:
+    # pre-train priority higher
+    partial_restore_op = partial_restore(sess, tf.global_variables(), FLAGS.pretrained_ckpts)
+    sess.run(partial_restore_op)
+    print('Recovering From Pretrained Model {}'.format(FLAGS.pretrained_ckpts))
+
+if FLAGS.last_ckpt is not None:
+    ckpt = tf.train.latest_checkpoint(FLAGS.last_ckpt)
+    if ckpt is not None:
+        # set up save configuration
+        saver.restore(sess, ckpt)
+        print('Recovering From {}'.format(ckpt))
+    else:
+        print('No previous Model Found in {}'.format(ckpt))
+
 try:
-    sess.run(tf.global_variables_initializer())
-
-    ckpt = None
-    if FLAGS.pretrained_ckpts is not None:
-        # pre-train priority higher
-        partial_restore_op = partial_restore(sess, tf.global_variables(), FLAGS.pretrained_ckpts)
-        sess.run(partial_restore_op)
-        print('Recovering From Pretrained Model {}'.format(FLAGS.pretrained_ckpts))
-
-    elif FLAGS.last_ckpt is not None:
-        ckpt = tf.train.latest_checkpoint(FLAGS.last_ckpt)
-        if ckpt is not None:
-            # set up save configuration
-            saver.restore(sess, ckpt)
-            print('Recovering From {}'.format(ckpt))
-        else:
-            print('No previous Model Found in {}'.format(ckpt))
-
     # start training
     local_step = 0
     while True:  # train until OutOfRangeError
@@ -189,7 +190,7 @@ try:
         # save model per xxx steps
         if local_step % FLAGS.save_per_step == 0 and local_step > 0:
             save_path = saver.save(sess, os.path.join(FLAGS.next_ckpt,
-                                                      '{:.3f} _ {}'.format(batch_mAP, step)))
+                                                      '{:.3f}_{}'.format(batch_mAP, step)))
             print("Model saved in path: %s" % save_path)
 
         print("Step {} : mAP {:.3f}%  loss {:.3f} reg {:.3f}"
