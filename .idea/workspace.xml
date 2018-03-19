@@ -6,10 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="af3257ac-3942-4331-b80e-62e36a6c3545" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/datasets/pascal_voc_reader.py" afterPath="$PROJECT_DIR$/datasets/pascal_voc_reader.py" />
-      <change beforePath="$PROJECT_DIR$/debug.py" afterPath="$PROJECT_DIR$/debug.py" />
-      <change beforePath="$PROJECT_DIR$/segs/fcn.py" afterPath="$PROJECT_DIR$/segs/fcn.py" />
-      <change beforePath="$PROJECT_DIR$/tf_ops/wrap_ops.py" afterPath="$PROJECT_DIR$/tf_ops/wrap_ops.py" />
       <change beforePath="$PROJECT_DIR$/train.py" afterPath="$PROJECT_DIR$/train.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -35,11 +31,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="train.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="train.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="162">
-              <caret line="21" column="44" lean-forward="false" selection-start-line="21" selection-start-column="44" selection-end-line="21" selection-end-column="44" />
+            <state relative-caret-position="432">
+              <caret line="36" column="47" lean-forward="false" selection-start-line="36" selection-start-column="47" selection-end-line="36" selection-end-column="47" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -67,11 +63,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="wrap_ops.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="wrap_ops.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tf_ops/wrap_ops.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="299">
-              <caret line="286" column="27" lean-forward="true" selection-start-line="286" selection-start-column="27" selection-end-line="286" selection-end-column="27" />
+            <state relative-caret-position="281">
+              <caret line="291" column="52" lean-forward="false" selection-start-line="291" selection-start-column="52" selection-end-line="291" selection-end-column="52" />
               <folding>
                 <element signature="e#66#84#0" expanded="true" />
               </folding>
@@ -114,9 +110,7 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="205">
               <caret line="96" column="0" lean-forward="true" selection-start-line="96" selection-start-column="0" selection-end-line="96" selection-end-column="0" />
-              <folding>
-                <element signature="e#1050#1088#0" expanded="true" />
-              </folding>
+              <folding />
             </state>
           </provider>
         </entry>
@@ -502,7 +496,14 @@
       <option name="project" value="LOCAL" />
       <updated>1521373855862</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="fix reader bugs">
+      <created>1521429761270</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1521429761270</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -540,7 +541,8 @@
     <MESSAGE value="update fcn" />
     <MESSAGE value="update train &amp; fix bugs" />
     <MESSAGE value="complete train &amp; add summary op &amp; fix bugs" />
-    <option name="LAST_COMMIT_MESSAGE" value="complete train &amp; add summary op &amp; fix bugs" />
+    <MESSAGE value="fix reader bugs" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix reader bugs" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
@@ -899,16 +901,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/train.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="162">
-          <caret line="21" column="44" lean-forward="false" selection-start-line="21" selection-start-column="44" selection-end-line="21" selection-end-column="44" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/datasets/pascal_voc_utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="288">
@@ -929,9 +921,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="205">
           <caret line="96" column="0" lean-forward="true" selection-start-line="96" selection-start-column="0" selection-end-line="96" selection-end-column="0" />
-          <folding>
-            <element signature="e#1050#1088#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -945,10 +935,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/tf_ops/wrap_ops.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="299">
-          <caret line="286" column="27" lean-forward="true" selection-start-line="286" selection-start-column="27" selection-end-line="286" selection-end-column="27" />
+        <state relative-caret-position="281">
+          <caret line="291" column="52" lean-forward="false" selection-start-line="291" selection-start-column="52" selection-end-line="291" selection-end-column="52" />
           <folding>
             <element signature="e#66#84#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="432">
+          <caret line="36" column="47" lean-forward="false" selection-start-line="36" selection-start-column="47" selection-end-line="36" selection-end-column="47" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
           </folding>
         </state>
       </provider>
