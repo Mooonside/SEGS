@@ -94,15 +94,15 @@ def reshape(name, image, label, reshape_size=None):
         label = tf.expand_dims(label, axis=0)
         label = tf.image.resize_nearest_neighbor(label, reshape_size)
 
-    return name, tf.squeeze(image), tf.squeeze(label)
+    return name, tf.squeeze(image, axis=0), tf.squeeze(label, axis=0)
 
 
 def cast_type(name, image, label):
     return name, tf.cast(image, tf.float32), tf.cast(label, tf.int32)
 
 
-def pascal_inputs(dir, batch_size, num_epochs, reshape_size, padding='SAME'):
-    """Reads input data num_epochs times.
+def get_dataset(dir, batch_size, num_epochs, reshape_size, padding='SAME'):
+    """Reads input data num_epochs times. AND Return the dataset
 
     Args:
       train: Selects between the training (True) and validation (False) data.
@@ -144,11 +144,9 @@ def pascal_inputs(dir, batch_size, num_epochs, reshape_size, padding='SAME'):
         # the parameter is the queue size
         dataset = dataset.shuffle(1000 + 3 * batch_size)
         dataset = dataset.batch(batch_size)
+    return dataset
 
-        iterator = dataset.make_one_shot_iterator()
 
-        name_batch, image_batch, label_batch = iterator.get_next()
-
-        label_batch = tf.expand_dims(label_batch, axis=-1)
-
-    return name_batch, image_batch, label_batch
+def get_next_batch(dataset):
+    iterator = dataset.make_one_shot_iterator()
+    return iterator.get_next()

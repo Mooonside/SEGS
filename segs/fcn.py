@@ -2,6 +2,8 @@
 An implementation of Fully Convolution Network
 By Yifeng Chen
 """
+from re import search
+
 import tensorflow as tf
 
 from backbones.vgg_16 import vgg_16, vgg_arg_scope
@@ -63,16 +65,18 @@ def fcn_8(inputs, num_classes=21,
     with arg_scope(vgg_arg_scope(weight_init, weight_reg, bias_init, bias_reg)):
         fcn32, end_points = vgg_16(inputs, num_classes=num_classes,
                                    spatial_squeeze=False, fc_conv_padding='SAME')
+    prefix_name = list(end_points.keys())[0]
+    prefix_name = prefix_name[:search('vgg_16', prefix_name).span()[0]]
     with tf.name_scope('upscale') as ns:
         end_points_collection = ns + '_end_points'
         with arg_scope(fcn_arg_scope(weight_init, weight_reg,
                                      bias_init, bias_reg,
                                      end_points_collection)):
             # conv7 deconv and add with pool4 [jump = 16]
-            pool4 = end_points['vgg_16/pool4:0']
+            pool4 = end_points[prefix_name + 'vgg_16/pool4:0']
             fcn16 = fcn_upsample(fcn32, pool4, ksize=[4, 4], name='to_16')
 
-            pool3 = end_points['vgg_16/pool3:0']
+            pool3 = end_points[prefix_name + 'vgg_16/pool3:0']
             fcn8 = fcn_upsample(fcn16, pool3, ksize=[4, 4], name='to_8')
 
             input_shape = tf.shape(inputs)
@@ -99,13 +103,15 @@ def fcn_16(inputs, num_classes=21,
     with arg_scope(vgg_arg_scope()):
         fcn32, end_points = vgg_16(inputs, num_classes=num_classes,
                                    spatial_squeeze=False, fc_conv_padding='SAME')
+    prefix_name = list(end_points.keys())[0]
+    prefix_name = prefix_name[:search('vgg_16', prefix_name).span()[0]]
     with tf.name_scope('upscale') as ns:
         end_points_collection = ns + '_end_points'
         with arg_scope(fcn_arg_scope(weight_init, weight_reg,
                                      bias_init, bias_reg,
                                      end_points_collection)):
             # conv7 deconv and add with pool4 [jump = 16]
-            pool4 = end_points['vgg_16/pool4:0']
+            pool4 = end_points[prefix_name + 'vgg_16/pool4:0']
             fcn16 = fcn_upsample(fcn32, pool4, ksize=[4, 4], name='to_16')
 
             fcn1 = trans_conv2d(fcn16, outc=num_classes, ksize=[32, 32], strides=[16, 16],
@@ -129,6 +135,8 @@ def fcn_32(inputs, num_classes=21,
     with arg_scope(vgg_arg_scope()):
         fcn32, end_points = vgg_16(inputs, num_classes=num_classes,
                                    spatial_squeeze=False, fc_conv_padding='SAME')
+    prefix_name = list(end_points.keys())[0]
+    prefix_name = prefix_name[:search('vgg_16', prefix_name).span()[0]]
     with tf.name_scope('upscale') as ns:
         end_points_collection = ns + '_end_points'
         with arg_scope(fcn_arg_scope(weight_init, weight_reg,

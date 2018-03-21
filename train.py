@@ -1,6 +1,6 @@
 import os
 
-from datasets.pascal_voc_reader import pascal_inputs, TRAIN_DIR
+from datasets.pascal_voc_reader import get_dataset, get_next_batch, TRAIN_DIR
 from segs.factory import get_net
 from tf_ops.benchmarks import mAP
 from tf_ops.visualize import paint
@@ -53,8 +53,7 @@ tf.app.flags.DEFINE_string('last_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/
 tf.app.flags.DEFINE_string('next_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn',
                            'where to store current model')
 
-tf.app.flags.DEFINE_integer('save_per_step', 1000,
-                            'save model per xxx steps')
+tf.app.flags.DEFINE_integer('save_per_step', 1000, 'save model per xxx steps')
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -83,12 +82,13 @@ with tf.device(store_device):
     global_step = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
     # read data
     reshape_size = [FLAGS.reshape_height, FLAGS.reshape_weight]
-    name_batch, image_batch, label_batch = pascal_inputs(
+    name_batch, image_batch, label_batch = get_next_batch(get_dataset(
         dir=FLAGS.data_dir, batch_size=FLAGS.batch_size, num_epochs=FLAGS.epoch_num, reshape_size=reshape_size)
+    )
 
 # inference
 with arg_scope([get_variable], device=store_device):
-    with tf.device(run_device):
+    with tf.device('/GPU:0'):
         net = get_net(FLAGS.net_name)
         score_map, endpoints = net(image_batch, num_classes=FLAGS.num_classes,
                                    weight_init=None, weight_reg=weight_reg,
@@ -161,12 +161,6 @@ sess.run(tf.global_variables_initializer())
 
 # initialize
 ckpt = None
-if FLAGS.last_ckpt is None and FLAGS.pretrained_ckpts is not None:
-    # pre-train priority higher
-    partial_restore_op = partial_restore(sess, tf.global_variables(), FLAGS.pretrained_ckpts)
-    sess.run(partial_restore_op)
-    print('Recovering From Pretrained Model {}'.format(FLAGS.pretrained_ckpts))
-
 if FLAGS.last_ckpt is not None:
     ckpt = tf.train.latest_checkpoint(FLAGS.last_ckpt)
     if ckpt is not None:
@@ -175,6 +169,12 @@ if FLAGS.last_ckpt is not None:
         print('Recovering From {}'.format(ckpt))
     else:
         print('No previous Model Found in {}'.format(ckpt))
+        if FLAGS.pretrained_ckpts is not None:
+            # pre-train priority higher
+            partial_restore_op = partial_restore(sess, tf.global_variables(), FLAGS.pretrained_ckpts)
+            sess.run(partial_restore_op)
+            print('Recovering From Pretrained Model {}'.format(FLAGS.pretrained_ckpts))
+
 
 try:
     # start training
