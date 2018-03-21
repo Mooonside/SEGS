@@ -92,3 +92,12 @@ def add_activation_summary(var):
     if var is not None:
         tf.summary.histogram(var.op.name + "/activation", var)
         tf.summary.scalar(var.op.name + "/sparsity", tf.nn.zero_fraction(var))
+
+
+def parse_device_name(name):
+    if name.lower() == 'cpu':
+        return '/CPU:0'
+    elif name in '012345678':
+        return '/GPU:{}'.format(name)
+    else:
+        return None

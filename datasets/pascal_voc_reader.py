@@ -39,8 +39,8 @@ FLAGS = None
 # Constants used for dealing with the files, matches convert_to_records.
 TRAIN_DIR = '/mnt/disk/chenyifeng/VOC2012/tf_records/tf_records/train'
 VALIDATION_DIR = '/mnt/disk/chenyifeng/VOC2012/tf_records/tf_records/val'
-TRAIN_NUM = 10583
-VALID_NUM = 1450
+TRAIN_NUM = 10582
+VALID_NUM = 1449
 
 
 

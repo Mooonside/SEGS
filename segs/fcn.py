@@ -5,7 +5,7 @@ By Yifeng Chen
 import tensorflow as tf
 
 from backbones.vgg_16 import vgg_16, vgg_arg_scope
-from tf_ops.wrap_ops import trans_conv2d, conv2d, tensor_shape, get_variable
+from tf_ops.wrap_ops import trans_conv2d, conv2d, tensor_shape
 
 arg_scope = tf.contrib.framework.arg_scope
 add_arg_scope = tf.contrib.framework.add_arg_scope
@@ -41,37 +41,33 @@ def fcn_upsample(small, big, ksize=[4, 4], strides=[2, 2], padding='SAME',
 
 def fcn_arg_scope(weight_init=None, weight_reg=None,
                   bias_init=tf.zeros_initializer, bias_reg=None,
-                  device='CPU', end_points_collection=None):
+                  end_points_collection=None):
     """
     define arg_scope for fcn upsample part
     :param weight_init: weight initializer
     :param weight_reg: weight regularizer
     :param bias_init: bias initializer
     :param bias_reg: bias regularizer
-    :param device: where to perform operation on
     :return: arg_scope
     """
     with arg_scope([conv2d],
                    batch_norm=False, activate=None,
                    weight_init=weight_init, weight_reg=weight_reg,
                    bias_init=bias_init, bias_reg=bias_reg, padding='SAME',
-                   outputs_collections=end_points_collection):
-        with arg_scope([get_variable], device=device) as arg_sc:
-            return arg_sc
+                   outputs_collections=end_points_collection) as arg_sc:
+        return arg_sc
 
 
 def fcn_8(inputs, num_classes=21,
-          weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer, bias_reg=None,
-          device='cpu'):
-
-    with arg_scope(vgg_arg_scope(weight_init, weight_reg, bias_init, bias_reg, device=device)):
+          weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer, bias_reg=None):
+    with arg_scope(vgg_arg_scope(weight_init, weight_reg, bias_init, bias_reg)):
         fcn32, end_points = vgg_16(inputs, num_classes=num_classes,
                                    spatial_squeeze=False, fc_conv_padding='SAME')
     with tf.name_scope('upscale') as ns:
         end_points_collection = ns + '_end_points'
         with arg_scope(fcn_arg_scope(weight_init, weight_reg,
                                      bias_init, bias_reg,
-                                     device, end_points_collection)):
+                                     end_points_collection)):
             # conv7 deconv and add with pool4 [jump = 16]
             pool4 = end_points['vgg_16/pool4:0']
             fcn16 = fcn_upsample(fcn32, pool4, ksize=[4, 4], name='to_16')
@@ -96,8 +92,8 @@ def fcn_8(inputs, num_classes=21,
 
 
 def fcn_16(inputs, num_classes=21,
-           weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer, bias_reg=None,
-           device='cpu'):
+           weight_init=None, weight_reg=None,
+           bias_init=tf.zeros_initializer, bias_reg=None):
     image_shape = tensor_shape(inputs)
 
     with arg_scope(vgg_arg_scope()):
@@ -107,7 +103,7 @@ def fcn_16(inputs, num_classes=21,
         end_points_collection = ns + '_end_points'
         with arg_scope(fcn_arg_scope(weight_init, weight_reg,
                                      bias_init, bias_reg,
-                                     device, end_points_collection)):
+                                     end_points_collection)):
             # conv7 deconv and add with pool4 [jump = 16]
             pool4 = end_points['vgg_16/pool4:0']
             fcn16 = fcn_upsample(fcn32, pool4, ksize=[4, 4], name='to_16')
@@ -126,8 +122,8 @@ def fcn_16(inputs, num_classes=21,
 
 
 def fcn_32(inputs, num_classes=21,
-           weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer, bias_reg=None,
-           device='cpu'):
+           weight_init=None, weight_reg=None,
+           bias_init=tf.zeros_initializer, bias_reg=None):
     image_shape = tensor_shape(inputs)
 
     with arg_scope(vgg_arg_scope()):
@@ -137,7 +133,7 @@ def fcn_32(inputs, num_classes=21,
         end_points_collection = ns + '_end_points'
         with arg_scope(fcn_arg_scope(weight_init, weight_reg,
                                      bias_init, bias_reg,
-                                     device, end_points_collection)):
+                                     end_points_collection)):
             # conv7 deconv and add with pool4 [jump = 16]
             fcn1 = trans_conv2d(fcn32, outc=num_classes, ksize=[64, 64], strides=[32, 32],
                                 output_shape=image_shape[:-1] + [num_classes], name='to_1')

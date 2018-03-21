@@ -31,17 +31,10 @@ def tensor_shape(tensor):
 
 
 @add_arg_scope
-def get_variable(name, shape, dtype=tf.float32, device='0', init=None, reg=None, collections=None):
-    if device == 'CPU' or 'cpu':
-        with tf.device('/cpu:0'):
-            var = tf.get_variable(name=name, shape=shape, dtype=dtype,
-                                  initializer=init, regularizer=reg, collections=collections)
-    elif device in ['0', '1', '2', '3']:
-        with tf.device('/gpu:' + device):
-            var = tf.get_variable(name=name, shape=shape, dtype=dtype,
-                                  initializer=init, regularizer=reg, collections=collections)
-    else:
-        raise Exception('Invalid Device Specified')
+def get_variable(name, shape, dtype=tf.float32, device='/CPU:0', init=None, reg=None, collections=None):
+    with tf.device(device):
+        var = tf.get_variable(name=name, shape=shape, dtype=dtype,
+                              initializer=init, regularizer=reg, collections=collections)
     return var
 
 
@@ -284,7 +277,7 @@ def softmax_with_logits(predictions, labels):
     a loss vector [N*H*W, ]
     :param predictions: [N, H, W, c], raw outputs of model
     :param labels: [N ,H, W, 1] int32
-    :return: a [N*H*W] loss
+    :return: a sample_mean loss
     """
     dim = tensor_shape(predictions)[-1]
 
@@ -293,5 +286,6 @@ def softmax_with_logits(predictions, labels):
     labels = tf.stop_gradient(labels)
     loss = tf.nn.softmax_cross_entropy_with_logits_v2(
         logits=logits, labels=labels, name='sample_wise_loss')
+    loss = tf.reduce_mean(loss, name='mean_loss')
     tf.add_to_collection(LOSS_COLLECTIONS, loss)
     return loss
