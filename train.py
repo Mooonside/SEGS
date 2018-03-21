@@ -5,7 +5,8 @@ from segs.factory import get_net
 from tf_ops.benchmarks import mAP
 from tf_ops.visualize import paint
 from tf_ops.wrap_ops import *
-from tf_utils import partial_restore, add_gradient_summary, add_var_summary, add_activation_summary
+from tf_utils import partial_restore, add_gradient_summary, \
+    add_var_summary, add_activation_summary, parse_device_name
 
 arg_scope = tf.contrib.framework.arg_scope
 
@@ -40,7 +41,7 @@ tf.app.flags.DEFINE_float('bias_reg_scale', None, 'bias regularization scale')
 tf.app.flags.DEFINE_string('bias_reg_func', None, 'use which func to regularize bias')
 
 # model load & save configs
-tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS',
+tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS/single_gpu/fcn',
                            'where to store summary log')
 
 tf.app.flags.DEFINE_string('pretrained_ckpts', '/home/chenyifeng/TF_Models/ptrain/vgg_16.ckpt',
@@ -60,75 +61,77 @@ FLAGS = tf.app.flags.FLAGS
 if (FLAGS.reshape_height is None or FLAGS.reshape_weight is None) and FLAGS.batch_size != 1:
     assert 0, 'Can''t Stack Images Of Different Shapes, Please Speicify Reshape Size!'
 
-if FLAGS.store_device.lower() == 'cpu':
-    device = 'cpu'
-elif FLAGS.store_device in ['0', '1', '2', '3']:
-    device = FLAGS.device
-else:
-    device = None
-
-config = tf.ConfigProto(log_device_placement=False)
-if set(FLAGS.run_device).issubset({'0', '1', '2', '3'}):
-    print('Deploying Model on {}'.format(''.join(FLAGS.run_device)))
-    os.environ['CUDA_VISIBLE_DEVICES'] = ''.join(FLAGS.run_device)
-    config.gpu_options.allow_growth = FLAGS.allow_growth
-    config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_fraction
-
-# set up step
-sess = tf.Session(config=config)
-global_step = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
-
-# read data
-reshape_size = [FLAGS.reshape_height, FLAGS.reshape_weight]
-name_batch, image_batch, label_batch = pascal_inputs(
-    dir=FLAGS.data_dir, batch_size=FLAGS.batch_size, num_epochs=FLAGS.epoch_num, reshape_size=reshape_size)
-
+store_device = parse_device_name(FLAGS.store_device)
+run_device = parse_device_name(FLAGS.run_device)
 weight_reg = regularizer(mode=FLAGS.weight_reg_func, scale=FLAGS.weight_reg_scale)
 bias_reg = regularizer(mode=FLAGS.bias_reg_func, scale=FLAGS.bias_reg_scale)
 
+# config devices
+config = tf.ConfigProto(log_device_placement=False)
+if FLAGS.run_device in '01234567':
+    print('Deploying Model on {} GPU Card'.format(''.join(FLAGS.run_device)))
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''.join(FLAGS.run_device)
+    config.gpu_options.allow_growth = FLAGS.allow_growth
+    config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_fraction
+else:
+    print('Deploying Model on CPU')
+
+# set up step
+sess = tf.Session(config=config)
+
+with tf.device(store_device):
+    global_step = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
+    # read data
+    reshape_size = [FLAGS.reshape_height, FLAGS.reshape_weight]
+    name_batch, image_batch, label_batch = pascal_inputs(
+        dir=FLAGS.data_dir, batch_size=FLAGS.batch_size, num_epochs=FLAGS.epoch_num, reshape_size=reshape_size)
+
 # inference
-net = get_net(FLAGS.net_name)
-score_map, endpoints = net(image_batch, num_classes=FLAGS.num_classes,
-                           weight_init=None, weight_reg=weight_reg,
-                           bias_init=tf.zeros_initializer, bias_reg=bias_reg, device=device)
+with arg_scope([get_variable], device=store_device):
+    with tf.device(run_device):
+        net = get_net(FLAGS.net_name)
+        score_map, endpoints = net(image_batch, num_classes=FLAGS.num_classes,
+                                   weight_init=None, weight_reg=weight_reg,
+                                   bias_init=tf.zeros_initializer, bias_reg=bias_reg)
 
-# solve for mAP and loss
-class_map = arg_max(score_map, axis=3, name='class_map')
-pixel_acc = mAP(class_map, label_batch)
+        # solve for mAP and loss
+        class_map = arg_max(score_map, axis=3, name='class_map')
+        pixel_acc = mAP(class_map, label_batch)
 
-# calculate loss
-loss = softmax_with_logits(score_map, label_batch)
-mean_loss = tf.reduce_mean(loss, name='mean_loss')
-reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-reg_loss = tf.reduce_sum(reg_losses)
-total_loss = mean_loss + reg_loss
+        # calculate loss
+        mean_loss = softmax_with_logits(score_map, label_batch)
+        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        reg_loss = tf.reduce_sum(reg_losses)
+        total_loss = mean_loss + reg_loss
 
-# set up optimizer
-decay_learning_rate = tf.train.exponential_decay(FLAGS.weight_learning_rate, global_step,
-                                                 decay_steps=100000, decay_rate=0.96, staircase=True)
+        # set up optimizer
+        decay_learning_rate = tf.train.exponential_decay(FLAGS.weight_learning_rate, global_step,
+                                                         decay_steps=10000, decay_rate=0.96, staircase=True)
 
-optimizer = tf.train.MomentumOptimizer(learning_rate=decay_learning_rate, momentum=FLAGS.momentum)
-ratio = (FLAGS.weight_learning_rate / FLAGS.bias_learning_rate) \
-    if FLAGS.bias_learning_rate is not None else 2
+        optimizer = tf.train.MomentumOptimizer(learning_rate=decay_learning_rate, momentum=FLAGS.momentum)
+        ratio = (FLAGS.weight_learning_rate / FLAGS.bias_learning_rate) \
+            if FLAGS.bias_learning_rate is not None else 2
 
-# solve for gradients
-weight_vars = tf.get_collection(weight_collections)
-bias_vars = tf.get_collection(bias_collections)
+        # solve for gradients
+        weight_vars = tf.get_collection(weight_collections)
+        bias_vars = tf.get_collection(bias_collections)
 
-weight_grads = optimizer.compute_gradients(total_loss, weight_vars)
-weight_grads = [(tf.clip_by_norm(grad, clip_norm=FLAGS.clip_grad_by_norm), var)
-                for grad, var in weight_grads if grad is not None]
+        weight_grads = optimizer.compute_gradients(total_loss, weight_vars)
+        weight_grads = [(tf.clip_by_norm(grad, clip_norm=FLAGS.clip_grad_by_norm), var)
+                        for grad, var in weight_grads if grad is not None]
 
-bias_grads = optimizer.compute_gradients(total_loss, bias_vars)
-bias_grads = [(tf.clip_by_norm(ratio * grad, clip_norm=FLAGS.clip_grad_by_norm), var)
-              for grad, var in bias_grads if grad is not None]
+        bias_grads = optimizer.compute_gradients(total_loss, bias_vars)
+        bias_grads = [(tf.clip_by_norm(ratio * grad, clip_norm=FLAGS.clip_grad_by_norm), var)
+                      for grad, var in bias_grads if grad is not None]
+
+        # set up train operation
+        train_op = optimizer.apply_gradients(weight_grads + bias_grads, global_step=global_step)
 
 # add summaries
 with tf.name_scope('summary_input_output'):
     tf.summary.image('image_batch', image_batch, max_outputs=1)
     tf.summary.image('label_batch', tf.cast(paint(label_batch), tf.uint8), max_outputs=1)
     tf.summary.image('predictions', tf.cast(paint(class_map), tf.uint8), max_outputs=1)
-    add_var_summary(loss)
     tf.summary.scalar('pixel_acc', pixel_acc)
     tf.summary.scalar('mean_loss', mean_loss)
     tf.summary.scalar('reg_loss', reg_loss)
@@ -150,13 +153,8 @@ with tf.name_scope('summary_activations'):
     for activations in endpoints.keys():
         add_activation_summary(endpoints[activations])
 
-
 merge_summary = tf.summary.merge_all()
 train_writer = tf.summary.FileWriter(FLAGS.summaries_dir, sess.graph)
-
-# set up train operation
-train_op = optimizer.apply_gradients(weight_grads + bias_grads, global_step=global_step)
-
 saver = tf.train.Saver(max_to_keep=3)
 
 sess.run(tf.global_variables_initializer())
