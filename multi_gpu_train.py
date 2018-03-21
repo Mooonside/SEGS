@@ -21,7 +21,7 @@ tf.app.flags.DEFINE_integer('num_classes', 21, '#classes')
 
 # learning configs
 tf.app.flags.DEFINE_integer('epoch_num', 10, 'epoch_nums')
-tf.app.flags.DEFINE_integer('batch_size', 16, 'batch size')
+tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size')
 tf.app.flags.DEFINE_float('weight_learning_rate', 1e-3, 'weight learning rate')
 tf.app.flags.DEFINE_float('bias_learning_rate', None, 'bias learning rate')
 tf.app.flags.DEFINE_float('clip_grad_by_norm', 5, 'clip_grad_by_norm')
@@ -41,13 +41,13 @@ tf.app.flags.DEFINE_float('bias_reg_scale', None, 'bias regularization scale')
 tf.app.flags.DEFINE_string('bias_reg_func', None, 'use which func to regularize bias')
 
 # model load & save configs
-tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS',
+tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS/fcn/mgpu',
                            'where to store summary log')
 
 tf.app.flags.DEFINE_string('pretrained_ckpts', '/home/chenyifeng/TF_Models/ptrain/vgg_16.ckpt',
                            'where to load pretrained model')
 
-tf.app.flags.DEFINE_string('last_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn/mgpu',
+tf.app.flags.DEFINE_string('last_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn/sgpu',
                            'where to load last saved model')
 
 tf.app.flags.DEFINE_string('next_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn/mgpu',
@@ -79,7 +79,7 @@ net = get_net(FLAGS.net_name)
 num_replicas = len(FLAGS.run_device)
 ratio = (FLAGS.weight_learning_rate / FLAGS.bias_learning_rate) \
     if FLAGS.bias_learning_rate is not None else 2
-
+FLAGS.batch_size = FLAGS.batch_size // num_replicas
 # set up step
 sess = tf.Session(config=config)
 
