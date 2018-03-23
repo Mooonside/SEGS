@@ -13,6 +13,16 @@ def paint(predictions, palette=pascal_voc_palette):
     return paint
 
 
+def compare(predictions, labels):
+    same = tf.cast(tf.equal(predictions, labels), tf.int32)
+    paint = tf.one_hot(same, depth=2, axis=-1, dtype=predictions.dtype)
+    paint = tf.squeeze(tf.tensordot(paint,
+                                    tf.cast([[255, 0, 0], [0, 0, 0]], predictions.dtype),
+                                    axes=[[-1], [0]]), axis=3)
+    return paint
+
+
+
 def locate_boundary(labels):
     """ locate boundaries in labels
     todo: test this function

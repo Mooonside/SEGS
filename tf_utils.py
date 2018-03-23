@@ -94,6 +94,10 @@ def add_activation_summary(var):
         tf.summary.scalar(var.op.name + "/sparsity", tf.nn.zero_fraction(var))
 
 
+def add_iou_summary(ious, classnames):
+    for idx, name in enumerate(classnames):
+        tf.summary.scalar(name + '_iou', ious[idx])
+
 def parse_device_name(name):
     if name.lower() == 'cpu':
         return '/CPU:0'

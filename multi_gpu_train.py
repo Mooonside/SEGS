@@ -1,12 +1,13 @@
 import os
 
 from datasets.pascal_voc_reader import get_dataset, get_next_batch, TRAIN_DIR
+from datasets.pascal_voc_utils import pascal_voc_classes
 from segs.factory import get_net
-from tf_ops.benchmarks import mAP
-from tf_ops.visualize import paint
+from tf_ops.benchmarks import mAP, mIOU
+from tf_ops.visualize import paint, compare
 from tf_ops.wrap_ops import *
 from tf_utils import partial_restore, parse_device_name, average_gradients, \
-    add_activation_summary, add_gradient_summary
+    add_activation_summary, add_gradient_summary, add_var_summary, add_iou_summary
 
 arg_scope = tf.contrib.framework.arg_scope
 
@@ -21,7 +22,7 @@ tf.app.flags.DEFINE_integer('num_classes', 21, '#classes')
 
 # learning configs
 tf.app.flags.DEFINE_integer('epoch_num', 10, 'epoch_nums')
-tf.app.flags.DEFINE_integer('batch_size', 64, 'batch size')
+tf.app.flags.DEFINE_integer('batch_size', 32, 'batch size')
 tf.app.flags.DEFINE_float('weight_learning_rate', 1e-3, 'weight learning rate')
 tf.app.flags.DEFINE_float('bias_learning_rate', None, 'bias learning rate')
 tf.app.flags.DEFINE_float('clip_grad_by_norm', 5, 'clip_grad_by_norm')
@@ -47,7 +48,7 @@ tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS/fcn/m
 tf.app.flags.DEFINE_string('pretrained_ckpts', '/home/chenyifeng/TF_Models/ptrain/vgg_16.ckpt',
                            'where to load pretrained model')
 
-tf.app.flags.DEFINE_string('last_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn/sgpu',
+tf.app.flags.DEFINE_string('last_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn/mgpu',
                            'where to load last saved model')
 
 tf.app.flags.DEFINE_string('next_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn/mgpu',
@@ -79,7 +80,7 @@ net = get_net(FLAGS.net_name)
 num_replicas = len(FLAGS.run_device)
 ratio = (FLAGS.weight_learning_rate / FLAGS.bias_learning_rate) \
     if FLAGS.bias_learning_rate is not None else 2
-FLAGS.batch_size = FLAGS.batch_size // num_replicas
+FLAGS.batch_size = FLAGS.batch_size
 # set up step
 sess = tf.Session(config=config)
 
@@ -105,19 +106,25 @@ with arg_scope([get_variable], device='/CPU:0'):
             class_map = arg_max(score_map, axis=3, name='class_map')
             pixel_acc = mAP(class_map, label_batch)
             mean_loss = softmax_with_logits(score_map, label_batch)
+            mean_IOU, IOUs = mIOU(class_map, label_batch, ignore_label=[0], num_classes=FLAGS.num_classes)
             with tf.name_scope('summary_input_output'):
                 tf.summary.image('tower_image_batch', image_batch, max_outputs=1)
                 tf.summary.image('tower_label_batch', tf.cast(paint(label_batch), tf.uint8), max_outputs=1)
                 tf.summary.image('tower_predictions', tf.cast(paint(class_map), tf.uint8), max_outputs=1)
+                tf.summary.image('tower_contrast', tf.cast(compare(class_map, label_batch), tf.uint8), max_outputs=1)
                 tf.summary.scalar('tower_pixel_acc', pixel_acc)
+                tf.summary.scalar('tower_mean_iou', mean_IOU)
                 tf.summary.scalar('tower_mean_loss', mean_loss)
-            return mean_loss, pixel_acc, endpoints
+            with tf.name_scope('tower_ious'):
+                add_iou_summary(IOUs, pascal_voc_classes)
+            return mean_loss, mean_IOU, pixel_acc, endpoints
 
 
         gather_weight_grads = []
         gather_bias_grads = []
         gather_loss = []
         gather_acc = []
+        gather_iou = []
         reg_loss = None
 
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
@@ -126,7 +133,7 @@ with arg_scope([get_variable], device='/CPU:0'):
                     device_name = parse_device_name(str(gpu_id))
                     with tf.device(device_name):
                         # mean while add to loss in its name_scope
-                        mean_loss, pixel_acc, endpoints = inference_to_loss()
+                        mean_loss, mean_IOU, pixel_acc, endpoints = inference_to_loss()
                         reg_loss = tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
                         total_loss = mean_loss + reg_loss
 
@@ -136,6 +143,7 @@ with arg_scope([get_variable], device='/CPU:0'):
 
                         gather_acc.append(pixel_acc)
                         gather_loss.append(mean_loss)
+                        gather_iou.append(mean_IOU)
 
                         weight_vars = tf.get_collection(weight_collections)
                         bias_vars = tf.get_collection(bias_collections)
@@ -160,19 +168,23 @@ with arg_scope([get_variable], device='/CPU:0'):
 
         overall_loss = tf.reduce_mean(gather_loss, name='overall_loss')
         overall_acc = tf.reduce_mean(gather_acc, name='overall_acc')
+        overall_iou = tf.reduce_mean(gather_iou, name='overall_iou')
 
         with tf.name_scope('summary_overall'):
             tf.summary.scalar('learning_rate', decay_learning_rate)
             tf.summary.scalar('overall_loss', overall_loss)
             tf.summary.scalar('overall_acc', overall_acc)
+            tf.summary.scalar('overall_iou', overall_iou)
             tf.summary.scalar('reg_loss', reg_loss)
 
+with tf.name_scope('summary_var'):
+    for var in tf.global_variables():
+        add_var_summary(var)
+
+sess.run(tf.global_variables_initializer())
 merge_summary = tf.summary.merge_all()
 saver = tf.train.Saver(max_to_keep=3)
 train_writer = tf.summary.FileWriter(FLAGS.summaries_dir, sess.graph)
-sess.run(tf.global_variables_initializer())
-
-print(tf.global_variables())
 
 # initialize
 ckpt = None
@@ -195,8 +207,8 @@ try:
     # start training
     local_step = 0
     while True:  # train until OutOfRangeError
-        batch_mAP, batch_tloss, batch_rloss, step, summary, _ = \
-            sess.run([overall_acc, overall_loss, reg_loss, global_step, merge_summary, train_op])
+        batch_mIOU, batch_mAP, batch_tloss, batch_rloss, step, summary, _ = \
+            sess.run([overall_iou, overall_acc, overall_loss, reg_loss, global_step, merge_summary, train_op])
         train_writer.add_summary(summary, step)
         local_step += 1
         # save model per xxx steps
@@ -205,8 +217,8 @@ try:
                                                       '{:.3f}_{}'.format(batch_mAP, step)))
             print("Model saved in path: %s" % save_path)
 
-        print("Step {} : mAP {:.3f}%  loss {:.3f} reg {:.3f}"
-              .format(step, batch_mAP * 100, batch_tloss, batch_rloss))
+        print("Step {} : mAP {:.3f}%  mIOU {:.3f}% loss {:.3f} reg {:.3f}"
+              .format(step, batch_mAP * 100, batch_mIOU * 100, batch_tloss, batch_rloss))
 
 except tf.errors.OutOfRangeError:
     print('Done training')

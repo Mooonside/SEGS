@@ -289,3 +289,4 @@ def softmax_with_logits(predictions, labels):
     loss = tf.reduce_mean(loss, name='mean_loss')
     tf.add_to_collection(LOSS_COLLECTIONS, loss)
     return loss
+

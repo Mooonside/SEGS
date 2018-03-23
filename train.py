@@ -1,12 +1,13 @@
 import os
 
 from datasets.pascal_voc_reader import get_dataset, get_next_batch, TRAIN_DIR
+from datasets.pascal_voc_utils import pascal_voc_classes
 from segs.factory import get_net
-from tf_ops.benchmarks import mAP
-from tf_ops.visualize import paint
+from tf_ops.benchmarks import mAP, mIOU
+from tf_ops.visualize import paint, compare
 from tf_ops.wrap_ops import *
 from tf_utils import partial_restore, add_gradient_summary, \
-    add_var_summary, add_activation_summary, parse_device_name
+    add_var_summary, add_activation_summary, parse_device_name, add_iou_summary
 
 arg_scope = tf.contrib.framework.arg_scope
 
@@ -21,7 +22,7 @@ tf.app.flags.DEFINE_integer('num_classes', 21, '#classes')
 
 # learning configs
 tf.app.flags.DEFINE_integer('epoch_num', 10, 'epoch_nums')
-tf.app.flags.DEFINE_integer('batch_size', 16, 'batch size')
+tf.app.flags.DEFINE_integer('batch_size', 1, 'batch size')
 tf.app.flags.DEFINE_float('weight_learning_rate', 1e-3, 'weight learning rate')
 tf.app.flags.DEFINE_float('bias_learning_rate', None, 'bias learning rate')
 tf.app.flags.DEFINE_float('clip_grad_by_norm', 5, 'clip_grad_by_norm')
@@ -41,16 +42,16 @@ tf.app.flags.DEFINE_float('bias_reg_scale', None, 'bias regularization scale')
 tf.app.flags.DEFINE_string('bias_reg_func', None, 'use which func to regularize bias')
 
 # model load & save configs
-tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS/single_gpu/fcn',
+tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS/fcn/sgpu',
                            'where to store summary log')
 
 tf.app.flags.DEFINE_string('pretrained_ckpts', '/home/chenyifeng/TF_Models/ptrain/vgg_16.ckpt',
                            'where to load pretrained model')
 
-tf.app.flags.DEFINE_string('last_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn',
+tf.app.flags.DEFINE_string('last_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn/sgpu',
                            'where to load last saved model')
 
-tf.app.flags.DEFINE_string('next_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn',
+tf.app.flags.DEFINE_string('next_ckpt', '/home/chenyifeng/TF_Models/atrain/SEGS/fcn/sgpu',
                            'where to store current model')
 
 tf.app.flags.DEFINE_integer('save_per_step', 1000, 'save model per xxx steps')
@@ -66,7 +67,7 @@ weight_reg = regularizer(mode=FLAGS.weight_reg_func, scale=FLAGS.weight_reg_scal
 bias_reg = regularizer(mode=FLAGS.bias_reg_func, scale=FLAGS.bias_reg_scale)
 
 # config devices
-config = tf.ConfigProto(log_device_placement=False)
+config = tf.ConfigProto(log_device_placement=False, allow_soft_placement=True)
 if FLAGS.run_device in '01234567':
     print('Deploying Model on {} GPU Card'.format(''.join(FLAGS.run_device)))
     os.environ['CUDA_VISIBLE_DEVICES'] = ''.join(FLAGS.run_device)
@@ -97,6 +98,7 @@ with arg_scope([get_variable], device=store_device):
         # solve for mAP and loss
         class_map = arg_max(score_map, axis=3, name='class_map')
         pixel_acc = mAP(class_map, label_batch)
+        mean_IOU, IOUs = mIOU(class_map, label_batch, ignore_label=[0], num_classes=FLAGS.num_classes)
 
         # calculate loss
         mean_loss = softmax_with_logits(score_map, label_batch)
@@ -132,10 +134,15 @@ with tf.name_scope('summary_input_output'):
     tf.summary.image('image_batch', image_batch, max_outputs=1)
     tf.summary.image('label_batch', tf.cast(paint(label_batch), tf.uint8), max_outputs=1)
     tf.summary.image('predictions', tf.cast(paint(class_map), tf.uint8), max_outputs=1)
+    tf.summary.image('contrast', tf.cast(compare(class_map, label_batch), tf.uint8), max_outputs=1)
     tf.summary.scalar('pixel_acc', pixel_acc)
     tf.summary.scalar('mean_loss', mean_loss)
+    tf.summary.scalar('mean_iou', mean_IOU)
     tf.summary.scalar('reg_loss', reg_loss)
     tf.summary.scalar('learning_rate', decay_learning_rate)
+
+with tf.name_scope('summary_ious'):
+    add_iou_summary(IOUs, pascal_voc_classes)
 
 with tf.name_scope('summary_vars'):
     for weight in weight_vars:
@@ -179,9 +186,11 @@ if FLAGS.last_ckpt is not None:
 try:
     # start training
     local_step = 0
+    sess.run(tf.local_variables_initializer())
     while True:  # train until OutOfRangeError
-        batch_mAP, batch_tloss, batch_rloss, step, summary, _ = \
-            sess.run([pixel_acc, mean_loss, reg_loss, global_step, merge_summary, train_op])
+        batch_mIOU, batch_mAP, batch_tloss, batch_rloss, step, summary, _ = \
+            sess.run([mean_IOU, pixel_acc, mean_loss, reg_loss, global_step, merge_summary, train_op])
+
         train_writer.add_summary(summary, step)
         local_step += 1
 
@@ -191,8 +200,8 @@ try:
                                                       '{:.3f}_{}'.format(batch_mAP, step)))
             print("Model saved in path: %s" % save_path)
 
-        print("Step {} : mAP {:.3f}%  loss {:.3f} reg {:.3f}"
-              .format(step, batch_mAP * 100, batch_tloss, batch_rloss))
+        print("Step {} : mAP {:.3f}%  mIOU {:.3f}% loss {:.3f} reg {:.3f}"
+              .format(step, batch_mAP * 100, batch_mIOU * 100, batch_tloss, batch_rloss))
 
 except tf.errors.OutOfRangeError:
     print('Done training')
