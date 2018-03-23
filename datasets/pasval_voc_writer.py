@@ -30,9 +30,9 @@ def bytes_feature(value):
 
 
 DEFUALT_PATHS = {
-    'images': '/mnt/disk/chenyifeng/VOC2012/tf_records/images',
-    'annotations': '/mnt/disk/chenyifeng/VOC2012/tf_records/annotations',
-    'segmentations': '/mnt/disk/chenyifeng/VOC2012/tf_records/segmentations'
+    'images': '/mnt/disk/chenyifeng/VOC2012/tf_segments/images',
+    'annotations': '/mnt/disk/chenyifeng/VOC2012/tf_segments/annotations',
+    'segmentations': '/mnt/disk/chenyifeng/VOC2012/tf_segments/segmentations'
 }
 
 
@@ -115,14 +115,14 @@ def convert_val():
     writer = PascalVocWriter(mode='val')
     pic_names = open('/mnt/disk/chenyifeng/VOC2012/tf_records/pascal_voc_val.txt').readlines()
     pic_names = [i.strip(' \n') for i in pic_names]
-    writer.run(pic_names, output_dir='/mnt/disk/chenyifeng/VOC2012/tf_records/tf_records/val')
+    writer.run(pic_names, output_dir='/mnt/disk/chenyifeng/VOC2012/tf_segments/tf_records/val')
 
 
 def convert_train():
     writer = PascalVocWriter(mode='train')
     pic_names = open('/mnt/disk/chenyifeng/VOC2012/tf_records/pascal_voc_train.txt').readlines()
     pic_names = [i.strip(' \n') for i in pic_names]
-    writer.run(pic_names, output_dir='/mnt/disk/chenyifeng/VOC2012/tf_records/tf_records/train')
+    writer.run(pic_names, output_dir='/mnt/disk/chenyifeng/VOC2012/tf_segments/tf_records/train')
 
 
 if __name__ == '__main__':
