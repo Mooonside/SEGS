@@ -17,7 +17,7 @@ def mAP(tensor1, tensor2):
     return acc
 
 
-def mIOU(predictions, labels, ignore_label=[0], num_classes=21):
+def mIOU(predictions, labels, ignore_label=[0], num_classes=21, max_classes=255 + 1):
     """
     return mean_iou, which eliminates ignore label, and ious which keep ignored label
     :param predictions:
@@ -30,7 +30,9 @@ def mIOU(predictions, labels, ignore_label=[0], num_classes=21):
 
     confusion_mat = tf.confusion_matrix(predictions=tf.reshape(predictions, [-1]),
                                         labels=tf.reshape(labels, [-1]),
-                                        num_classes=num_classes)
+                                        num_classes=max_classes)
+    # ignore those invalid labels
+    confusion_mat = confusion_mat[:num_classes, :num_classes]
     diag = tf.diag_part(confusion_mat)
     row_sum = tf.reduce_sum(confusion_mat, axis=0)
     col_sum = tf.reduce_sum(confusion_mat, axis=1)

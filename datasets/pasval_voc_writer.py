@@ -30,9 +30,9 @@ def bytes_feature(value):
 
 
 DEFUALT_PATHS = {
-    'images': '/mnt/disk/chenyifeng/VOC2012/tf_segments/images',
-    'annotations': '/mnt/disk/chenyifeng/VOC2012/tf_segments/annotations',
-    'segmentations': '/mnt/disk/chenyifeng/VOC2012/tf_segments/segmentations'
+    'images': '/mnt/disk/chenyifeng/VOC2012/JPEGImages',
+    'annotations': '/mnt/disk/chenyifeng/VOC2012/Annotations',
+    'segmentations': '/mnt/disk/chenyifeng/VOC2012/SegmentationClassAug'
 }
 
 
@@ -41,11 +41,10 @@ class PascalVocWriter:
         PASCAL VOC 2012 DataSet to TF record Writer
     """
 
-    def __init__(self, paths=DEFUALT_PATHS, mode='val'):
-        self.img_path = os.path.join(paths['images'], mode)
-        self.ano_path = os.path.join(paths['annotations'], mode)
-        self.sgm_path = os.path.join(paths['segmentations'], mode)
-
+    def __init__(self, paths=DEFUALT_PATHS):
+        self.img_path = paths['images']
+        self.ano_path = paths['annotations']
+        self.sgm_path = paths['segmentations']
     def convert_to_example(self, file_name):
         img_path = os.path.join(self.img_path, file_name + '.jpg')
         ano_path = os.path.join(self.ano_path, file_name + '.xml')
@@ -112,19 +111,19 @@ class PascalVocWriter:
 
 
 def convert_val():
-    writer = PascalVocWriter(mode='val')
-    pic_names = open('/mnt/disk/chenyifeng/VOC2012/tf_records/pascal_voc_val.txt').readlines()
+    writer = PascalVocWriter()
+    pic_names = open('/mnt/disk/chenyifeng/VOC2012/ImageSets/Segmentation/val.txt').readlines()
     pic_names = [i.strip(' \n') for i in pic_names]
     writer.run(pic_names, output_dir='/mnt/disk/chenyifeng/VOC2012/tf_segments/tf_records/val')
 
 
 def convert_train():
-    writer = PascalVocWriter(mode='train')
-    pic_names = open('/mnt/disk/chenyifeng/VOC2012/tf_records/pascal_voc_train.txt').readlines()
+    writer = PascalVocWriter()
+    pic_names = open('/mnt/disk/chenyifeng/VOC2012/ImageSets/Segmentation/train.txt').readlines()
     pic_names = [i.strip(' \n') for i in pic_names]
     writer.run(pic_names, output_dir='/mnt/disk/chenyifeng/VOC2012/tf_segments/tf_records/train')
 
 
 if __name__ == '__main__':
-    # convert_val()
-    convert_train()
+    # convert_train()
+    convert_val()

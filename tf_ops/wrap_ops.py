@@ -272,21 +272,92 @@ def arg_max(tensors, axis, out_type=tf.int32, keep_dim=True, name=None):
 
 
 @add_arg_scope
-def softmax_with_logits(predictions, labels):
+def softmax_with_logits(predictions, labels, ignore_labels=[255]):
     """
     a loss vector [N*H*W, ]
     :param predictions: [N, H, W, c], raw outputs of model
     :param labels: [N ,H, W, 1] int32
+    :param ignore_labels: ignore pixels with ground truth in ignore_labels
     :return: a sample_mean loss
     """
     dim = tensor_shape(predictions)[-1]
-
     logits = tf.reshape(predictions, shape=[-1, dim])
-    labels = tf.one_hot(tf.reshape(labels, [-1]), depth=dim)
+    labels = tf.reshape(labels, [-1])
+    # which is all ones
+    mask = tf.cast(tf.not_equal(labels, -1), tf.float32)
+    for ignore in ignore_labels:
+        mask *= tf.cast(tf.not_equal(labels, ignore), tf.float32)
+
+    labels = tf.one_hot(labels, depth=dim)
     labels = tf.stop_gradient(labels)
     loss = tf.nn.softmax_cross_entropy_with_logits_v2(
         logits=logits, labels=labels, name='sample_wise_loss')
-    loss = tf.reduce_mean(loss, name='mean_loss')
+    loss *= mask
+
+    loss = tf.divide(tf.reduce_sum(loss), tf.reduce_sum(mask), name='mean_loss')
     tf.add_to_collection(LOSS_COLLECTIONS, loss)
     return loss
 
+
+def abs_smooth(x):
+    """Smoothed absolute function. Useful to compute an L1 smooth error.
+
+    Define as:
+        x^2 / 2         if abs(x) < 1
+        abs(x) - 0.5    if abs(x) > 1
+    We use here a differentiable definition using min(x) and abs(x). Clearly
+    not optimal, but good enough for our purpose!
+    """
+    absx = tf.abs(x)
+    minx = tf.minimum(absx, 1)
+    r = 0.5 * ((absx - 1) * minx + absx)
+    return r
+
+
+@add_arg_scope
+def pad2d(inputs,
+          pad=(0, 0),
+          mode='CONSTANT',
+          data_format='NHWC',
+          trainable=True,
+          scope=None):
+    """2D Padding layer, adding a symmetric padding to H and W dimensions.
+
+    Aims to mimic padding in Caffe and MXNet, helping the port of models to
+    TensorFlow. Tries to follow the naming convention of `tf.contrib.layers`.
+
+    Args:
+      inputs: 4D input Tensor;
+      pad: 2-Tuple with padding values for H and W dimensions;
+      mode: Padding mode. C.f. `tf.pad`
+      data_format:  NHWC or NCHW data format.
+    """
+    with tf.name_scope(scope, 'pad2d', [inputs]):
+        # Padding shape.
+        if data_format == 'NHWC':
+            paddings = [[0, 0], [pad[0], pad[0]], [pad[1], pad[1]], [0, 0]]
+        elif data_format == 'NCHW':
+            paddings = [[0, 0], [0, 0], [pad[0], pad[0]], [pad[1], pad[1]]]
+        net = tf.pad(inputs, paddings, mode=mode)
+        return net
+
+
+@add_arg_scope
+def channel_to_last(inputs,
+                    data_format='NHWC',
+                    scope=None):
+    """Move the channel axis to the last dimension. Allows to
+    provide a single output format whatever the input data format.
+
+    Args:
+      inputs: Input Tensor;
+      data_format: NHWC or NCHW.
+    Return:
+      Input in NHWC format.
+    """
+    with tf.name_scope(scope, 'channel_to_last', [inputs]):
+        if data_format == 'NHWC':
+            net = inputs
+        elif data_format == 'NCHW':
+            net = tf.transpose(inputs, perm=(0, 2, 3, 1))
+        return net
