@@ -7,7 +7,6 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.training.moving_averages import assign_moving_average
 
-LOSS_COLLECTIONS = tf.GraphKeys.LOSSES
 TRAINABLE_VARIABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
 
@@ -23,6 +22,7 @@ batch_norm_collections = 'batch_norm_collections'
 WEIGHT_COLLECTIONS = [weight_collections, TRAINABLE_VARIABLES, GLOBAL_VARIABLES]
 BIAS_COLLECTIONS = [bias_collections, TRAINABLE_VARIABLES, GLOBAL_VARIABLES]
 BN_COLLECTIONS = [batch_norm_collections, TRAINABLE_VARIABLES, GLOBAL_VARIABLES]
+LOSS_COLLECTIONS = tf.GraphKeys.LOSSES
 
 
 @add_arg_scope
@@ -70,25 +70,24 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
             biases = get_variable(name='biases', shape=[outc], init=bias_init, reg=bias_reg,
                                   collections=BIAS_COLLECTIONS)
 
-    conv = tf.nn.conv2d(input=inputs,
-                        filter=filters,
-                        strides=[1] + strides + [1],
-                        padding=padding,
-                        use_cudnn_on_gpu=True,
-                        data_format="NHWC",
-                        dilations=[1] + ratios + [1],
-                        name=name)
+        conv = tf.nn.conv2d(input=inputs,
+                            filter=filters,
+                            strides=[1] + strides + [1],
+                            padding=padding,
+                            use_cudnn_on_gpu=True,
+                            data_format="NHWC",
+                            dilations=[1] + ratios + [1],
+                            name=name)
+
+        if batch_norm:
+            conv = batch_norm2d(conv)
+        else:
+            conv = conv + biases
+
+        if activate is not None:
+            conv = activate(conv)
 
     tf.add_to_collection(outputs_collections, conv)
-
-    if batch_norm:
-        conv = batch_norm2d(conv)
-    else:
-        conv = conv + biases
-
-    if activate is not None:
-        conv = activate(conv)
-
     return conv
 
 
@@ -117,10 +116,10 @@ def fully_connected(inputs, outc, name='None', activate=tf.nn.relu,
                               init=bias_init, reg=bias_reg, collections=BIAS_COLLECTIONS)
 
     dense = tf.tensordot(inputs, weights, axes=[[-1], [0]]) + biases
-    tf.add_to_collection(outputs_collections, dense)
 
     if activate is not None:
         dense = activate(dense)
+    tf.add_to_collection(outputs_collections, dense)
 
     return dense
 
@@ -272,12 +271,17 @@ def arg_max(tensors, axis, out_type=tf.int32, keep_dim=True, name=None):
 
 
 @add_arg_scope
-def softmax_with_logits(predictions, labels, ignore_labels=[255]):
+def softmax_with_logits(predictions, labels,
+                        ignore_labels=[255],
+                        loss_collections=LOSS_COLLECTIONS,
+                        weights=None):
     """
     a loss vector [N*H*W, ]
     :param predictions: [N, H, W, c], raw outputs of model
     :param labels: [N ,H, W, 1] int32
     :param ignore_labels: ignore pixels with ground truth in ignore_labels
+    :param loss_collections: add to which loss collections
+    :param weights: set weight to each loss
     :return: a sample_mean loss
     """
     dim = tensor_shape(predictions)[-1]
@@ -294,70 +298,16 @@ def softmax_with_logits(predictions, labels, ignore_labels=[255]):
         logits=logits, labels=labels, name='sample_wise_loss')
     loss *= mask
 
+    if weights is not None:
+        loss *= weights
+
     loss = tf.divide(tf.reduce_sum(loss), tf.reduce_sum(mask), name='mean_loss')
-    tf.add_to_collection(LOSS_COLLECTIONS, loss)
+    if loss_collections is not None:
+        tf.add_to_collection(loss_collections, loss)
     return loss
 
 
-def abs_smooth(x):
-    """Smoothed absolute function. Useful to compute an L1 smooth error.
-
-    Define as:
-        x^2 / 2         if abs(x) < 1
-        abs(x) - 0.5    if abs(x) > 1
-    We use here a differentiable definition using min(x) and abs(x). Clearly
-    not optimal, but good enough for our purpose!
-    """
-    absx = tf.abs(x)
-    minx = tf.minimum(absx, 1)
-    r = 0.5 * ((absx - 1) * minx + absx)
-    return r
-
-
-@add_arg_scope
-def pad2d(inputs,
-          pad=(0, 0),
-          mode='CONSTANT',
-          data_format='NHWC',
-          trainable=True,
-          scope=None):
-    """2D Padding layer, adding a symmetric padding to H and W dimensions.
-
-    Aims to mimic padding in Caffe and MXNet, helping the port of models to
-    TensorFlow. Tries to follow the naming convention of `tf.contrib.layers`.
-
-    Args:
-      inputs: 4D input Tensor;
-      pad: 2-Tuple with padding values for H and W dimensions;
-      mode: Padding mode. C.f. `tf.pad`
-      data_format:  NHWC or NCHW data format.
-    """
-    with tf.name_scope(scope, 'pad2d', [inputs]):
-        # Padding shape.
-        if data_format == 'NHWC':
-            paddings = [[0, 0], [pad[0], pad[0]], [pad[1], pad[1]], [0, 0]]
-        elif data_format == 'NCHW':
-            paddings = [[0, 0], [0, 0], [pad[0], pad[0]], [pad[1], pad[1]]]
-        net = tf.pad(inputs, paddings, mode=mode)
-        return net
-
-
-@add_arg_scope
-def channel_to_last(inputs,
-                    data_format='NHWC',
-                    scope=None):
-    """Move the channel axis to the last dimension. Allows to
-    provide a single output format whatever the input data format.
-
-    Args:
-      inputs: Input Tensor;
-      data_format: NHWC or NCHW.
-    Return:
-      Input in NHWC format.
-    """
-    with tf.name_scope(scope, 'channel_to_last', [inputs]):
-        if data_format == 'NHWC':
-            net = inputs
-        elif data_format == 'NCHW':
-            net = tf.transpose(inputs, perm=(0, 2, 3, 1))
-        return net
+def smooth_l1(x):
+    square_selector = tf.cast(tf.less(tf.abs(x), 1), tf.float32)
+    x = square_selector * 0.5 * tf.square(x) + (1 - square_selector) * (tf.abs(x) - 0.5)
+    return x

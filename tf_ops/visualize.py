@@ -43,3 +43,12 @@ def locate_boundary(labels):
         for ymove in [-1, 0, 1]:
             boundary = tf.logical_or(boundary, expansions[:, 1 + xmove:1 + xmove + H, 1 + ymove:1 + ymove + W, :])
     return boundary
+
+
+def draw_bbox(image, bboxes):
+    if tensor_shape(image) == 3:
+        image = tf.expand_dims(image, axis=1)
+    if tensor_shape(bboxes) == 2:
+        bboxes = tf.expand_dims(bboxes, axis=1)
+    after = tf.image.draw_bounding_boxes(image, bboxes)
+    return after

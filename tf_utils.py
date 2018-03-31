@@ -18,7 +18,7 @@ def inspect_ckpt(ckpt_path):
         shape = var_to_shape_map[var_name]
         # dtype = var_to_dtype_map[var_name]
         # print(var_name, shape, dtype)
-        print(var_name, shape, var)
+        print(var_name, shape)
 
 
 def rename_vars_in_ckpt(ckpt_path, name_map, output_path):
@@ -36,16 +36,19 @@ def rename_vars_in_ckpt(ckpt_path, name_map, output_path):
 
     sess = tf.Session()
 
-    for var_name in var_names[-1:]:
+    for var_name in var_names:
         var = reader.get_tensor(var_name)
         dtype = var_to_dtype_map[var_name]
-
-        newname = name_map[var_name]
-        tf.get_variable(name=newname, dtype=dtype, initializer=var)
+        if var_name in name_map.keys():
+            newname = name_map[var_name]
+            tf.get_variable(name=newname, dtype=dtype, initializer=var)
+        else:
+            print('Ignoring {}'.format(var_name))
 
     sess.run(tf.global_variables_initializer())
     saver = tf.train.Saver()
     saver.save(sess, save_path=output_path)
+    sess.close()
     print('Renamed Model Saved')
 
 
