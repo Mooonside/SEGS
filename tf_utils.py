@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow.python import pywrap_tensorflow
 
@@ -18,7 +19,7 @@ def inspect_ckpt(ckpt_path):
         shape = var_to_shape_map[var_name]
         # dtype = var_to_dtype_map[var_name]
         # print(var_name, shape, dtype)
-        print(var_name, shape)
+        print(var_name, shape, np.mean(var), np.var(var))
 
 
 def rename_vars_in_ckpt(ckpt_path, name_map, output_path):

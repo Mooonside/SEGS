@@ -12,7 +12,6 @@ GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
 
 var_scope = tf.variable_scope
 arg_scope = tf.contrib.framework.arg_scope
-add_to_collection = tf.add_to_collection
 add_arg_scope = tf.contrib.framework.add_arg_scope
 
 weight_collections = 'weights_collections'
@@ -39,10 +38,36 @@ def get_variable(name, shape, dtype=tf.float32, device='/CPU:0', init=None, reg=
 
 
 @add_arg_scope
-def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, padding='SAME',
-           activate=tf.nn.relu, batch_norm=True,
-           weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer, bias_reg=None,
-           outputs_collections=None):
+def same_padding(inputs, ksize, ratios):
+    """Pads the input along the spatial dimensions independently of input size.
+
+    Args:
+      inputs: A tensor of size [batch, height_in, width_in, channels].
+      ksize: The kernel to be used in the conv2d or max_pool2d operation.
+                   Should be a positive integer.
+      ratios: An integer, rate for atrous convolution.
+
+    Returns:
+      output: A tensor of size [batch, height_out, width_out, channels] with the
+        input, either intact (if kernel_size == 1) or padded (if kernel_size > 1).
+    """
+    pad_array = [[0, 0]]
+    for idx, k in enumerate(ksize):
+        k_effective = k + (k - 1) * (ratios[idx] - 1)
+        pad_total = k_effective - 1
+        pad_beg = pad_total // 2
+        pad_end = pad_total - pad_beg
+        pad_array.append([pad_beg, pad_end])
+    pad_array.append([0, 0])
+
+    padded_inputs = tf.pad(inputs, pad_array)
+    return padded_inputs
+
+
+@add_arg_scope
+def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, padding='SAME', activate=tf.nn.relu,
+           batch_norm=True, use_bias=False, weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer,
+           bias_reg=None, outputs_collections=None):
     """
     Wrapper for Conv layers
     :param inputs: [N, H, W, C]
@@ -54,6 +79,7 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
     :param padding: padding mode
     :param activate: activate function
     :param batch_norm: whether performs batch norm
+    :param use_bias: whether use bias addition
     :param weight_init: weight initializer
     :param weight_reg: weight regularizer
     :param bias_init: bias initializer
@@ -61,33 +87,123 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
     :param outputs_collections: add result to some collection
     :return: convolution after activation
     """
+    # can't use both
+    assert not (batch_norm and use_bias)
     indim = tensor_shape(inputs)[-1]
 
     with tf.variable_scope(name, 'conv'):
         filters = get_variable(name='weights', shape=ksize + [indim, outc],
                                init=weight_init, reg=weight_reg, collections=WEIGHT_COLLECTIONS)
-        if not batch_norm:
-            biases = get_variable(name='biases', shape=[outc], init=bias_init, reg=bias_reg,
-                                  collections=BIAS_COLLECTIONS)
+
+        if padding == 'SAME':
+            inputs = same_padding(inputs, ksize, ratios)
 
         conv = tf.nn.conv2d(input=inputs,
                             filter=filters,
                             strides=[1] + strides + [1],
-                            padding=padding,
+                            padding='VALID',
                             use_cudnn_on_gpu=True,
                             data_format="NHWC",
                             dilations=[1] + ratios + [1],
                             name=name)
 
+        # tf.add_to_collection(outputs_collections, conv)
         if batch_norm:
             conv = batch_norm2d(conv)
-        else:
+        elif use_bias:
+            biases = get_variable(name='biases', shape=[outc], init=bias_init, reg=bias_reg,
+                                  collections=BIAS_COLLECTIONS)
             conv = conv + biases
 
         if activate is not None:
             conv = activate(conv)
 
     tf.add_to_collection(outputs_collections, conv)
+    return conv
+
+
+@add_arg_scope
+def sep_conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], depth_multiplier=1, padding='SAME',
+               activate=tf.nn.relu, batch_norm=True, use_bias=False,
+               weight_init=None, depthwise_weight_reg=None, pointwise_weight_reg=None,
+               bias_init=tf.zeros_initializer, bias_reg=None,
+               activate_middle=None, outputs_collections=None, name='separate_conv'):
+    """
+    separable convolution warped
+    :param inputs: [H, H, W, C]
+    :param outc: output channels
+    :param ksize: [hk, wk]
+    :param depth_multiplier: num of kernels per channel in depth_wise convolution
+    :param strides: [hs, ws]
+    :param ratios: [hr, wr]
+    :param padding: padding: padding mode
+    :param activate: activate function
+    :param activate_middle: whether apply activation between depth_wise and pointwise conv
+    :param batch_norm: whether performs batch norm
+    :param use_bias: whether apply bias addition
+    :param weight_init: weight initializer
+    :param pointwise_weight_reg: weight regularizer for pointwise weight
+    :param depthwise_weight_reg: weight regularizer for depthwise weight
+    :param bias_init: bias initializer
+    :param bias_reg: bias regularizer
+    :param outputs_collections: add result to some collection
+    :param name: var_scope & operation name
+    :return:
+    """
+    with tf.variable_scope(name, 'separate_conv'):
+        with tf.variable_scope('depthwise_conv'):
+            indim = tensor_shape(inputs)[-1]
+            depthwise_filter = get_variable(name='depthwise_weights', shape=ksize + [indim, depth_multiplier],
+                                            init=weight_init, reg=depthwise_weight_reg, collections=WEIGHT_COLLECTIONS)
+
+            if padding == 'SAME':
+                inputs = same_padding(inputs, ksize, ratios)
+
+            conv = tf.nn.depthwise_conv2d(
+                input=inputs,
+                filter=depthwise_filter,
+                strides=[1] + strides + [1],
+                padding='VALID',
+                rate=ratios,
+                name='depthwise_conv',
+                data_format="NHWC"
+            )
+
+            if batch_norm:
+                conv = batch_norm2d(conv)
+            elif use_bias:
+                biases = get_variable(name='biases', shape=[outc], init=bias_init, reg=bias_reg,
+                                      collections=BIAS_COLLECTIONS)
+                conv = conv + biases
+
+            if activate_middle is not None:
+                conv = activate_middle(conv)
+            add_to_collection(outputs_collections, conv)
+
+        with tf.variable_scope('pointwise_conv'):
+            pointwise_filter = get_variable(name='pointwise_weights', shape=[1, 1] + [indim * depth_multiplier, outc],
+                                            init=weight_init, reg=pointwise_weight_reg, collections=WEIGHT_COLLECTIONS)
+
+            conv = tf.nn.conv2d(input=conv,
+                                filter=pointwise_filter,
+                                strides=[1] + [1, 1] + [1],
+                                padding='VALID',
+                                use_cudnn_on_gpu=True,
+                                data_format="NHWC",
+                                dilations=[1] + [1, 1] + [1],
+                                name='pointwise_conv')
+
+            if batch_norm:
+                conv = batch_norm2d(conv)
+            elif use_bias:
+                biases = get_variable(name='biases', shape=[outc], init=bias_init, reg=bias_reg,
+                                      collections=BIAS_COLLECTIONS)
+                conv = conv + biases
+
+            if activate is not None:
+                conv = activate(conv)
+            add_to_collection(outputs_collections, conv)
+
     return conv
 
 
@@ -147,6 +263,28 @@ def max_pool2d(inputs, ksize=[2, 2], strides=[2, 2], padding='SAME', name=None, 
 
 
 @add_arg_scope
+def avg_pool2d(inputs, ksize=[2, 2], strides=[2, 2], padding='SAME', name=None, outputs_collections=None):
+    """
+    Wrapper for tf.nn.max_pool
+    :param inputs: [N, H, W, C]
+    :param ksize: [hk, wk]
+    :param strides: [hs, ws]
+    :param padding: padding mode
+    :param name: var_scope & operation name
+    :param outputs_collections: add result to some collection
+    :return:
+    """
+    pool = tf.nn.avg_pool(value=inputs,
+                          ksize=[1] + ksize + [1],
+                          strides=[1] + strides + [1],
+                          padding=padding,
+                          data_format='NHWC',
+                          name=name)
+    tf.add_to_collection(outputs_collections, pool)
+    return pool
+
+
+@add_arg_scope
 def drop_out(inputs, kp_prob, is_training, name=None):
     if type(kp_prob) != float:
         print('Invalid Parameter Specified {}'.format(kp_prob))
@@ -181,8 +319,8 @@ def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, na
             # update moving_moments
             axes = list(np.arange(len(inputs.get_shape()) - 1))
             mean, variance = tf.nn.moments(inputs, axes, name='moments')
-            with tf.control_dependencies([assign_moving_average(moving_mean, mean, decay),
-                                          assign_moving_average(moving_variance, variance, decay)]):
+            with tf.control_dependencies([assign_moving_average(moving_mean, mean, decay, zero_debias=False),
+                                          assign_moving_average(moving_variance, variance, decay, zero_debias=False)]):
                 # https://stackoverflow.com/questions/34877523/in-tensorflow-what-is-tf-identity-used-for
                 return tf.identity(mean), tf.identity(variance)
 
@@ -311,3 +449,10 @@ def smooth_l1(x):
     square_selector = tf.cast(tf.less(tf.abs(x), 1), tf.float32)
     x = square_selector * 0.5 * tf.square(x) + (1 - square_selector) * (tf.abs(x) - 0.5)
     return x
+
+
+def add_to_collection(collections, variable, name=None):
+    if name is None:
+        tf.add_to_collection(collections, variable)
+    else:
+        tf.add_to_collection(collections, tf.identity(variable, name=name))

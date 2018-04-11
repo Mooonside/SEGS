@@ -127,16 +127,16 @@ def vgg_16(inputs,
 
 vgg_16.default_image_size = 224
 
-# if __name__ == '__main__':
-#     sess = tf.Session()
-#     inputs = tf.placeholder(name='inputs', shape=[16, 224, 224, 3], dtype=tf.float32)
-#     with arg_scope(vgg_arg_scope()):
-#         _, end_points = vgg_16(inputs)
-#     # for i in (tf.global_variables()):
-#     #     print(i.name)
-#     sess.run(tf.global_variables_initializer())
-#     saver = tf.train.Saver()
-#     saver.restore(sess=sess, save_path='/home/yifeng/Models/pretrain/vgg_16.ckpt')
-#
-#     trainable_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-#     print(trainable_vars[0], sess.run(trainable_vars[0]))
+if __name__ == '__main__':
+    sess = tf.Session()
+    inputs = tf.placeholder(name='inputs', shape=[16, 224, 224, 3], dtype=tf.float32)
+    with arg_scope(vgg_arg_scope()):
+        _, end_points = vgg_16(inputs)
+    for i in (end_points):
+        print(end_points[i])
+    sess.run(tf.global_variables_initializer())
+    # saver = tf.train.Saver()
+    # saver.restore(sess=sess, save_path='/home/yifeng/Models/pretrain/vgg_16.ckpt')
+    #
+    # trainable_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    # print(trainable_vars[0], sess.run(trainable_vars[0]))
