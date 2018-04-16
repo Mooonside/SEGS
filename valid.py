@@ -7,7 +7,7 @@ from tf_ops.benchmarks import validation_metrics
 from tf_ops.visualize import paint, compare
 from tf_ops.wrap_ops import *
 from tf_utils import partial_restore, \
-    add_var_summary, add_activation_summary, parse_device_name, add_iou_summary
+    add_var_summary, add_activation_summary, parse_device_name
 
 arg_scope = tf.contrib.framework.arg_scope
 
@@ -21,8 +21,8 @@ tf.app.flags.DEFINE_string('net_name', 'fcn8', 'which segmentation net to use')
 tf.app.flags.DEFINE_integer('num_classes', 21, '#classes')
 
 # learning configs
-tf.app.flags.DEFINE_integer('epoch_num', 1, 'epoch_nums')
-tf.app.flags.DEFINE_integer('batch_size', 16, 'batch size')
+tf.app.flags.DEFINE_integer('epoch_num',32, 'epoch_nums')
+tf.app.flags.DEFINE_integer('batch_size', 1, 'batch size')
 
 # deploy configs
 tf.app.flags.DEFINE_string('store_device', 'cpu', 'where to place the variables')
@@ -38,6 +38,9 @@ tf.app.flags.DEFINE_string('bias_reg_func', None, 'use which func to regularize 
 
 # model load & save configs
 tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS/fcn/validation',
+                           'where to store summary log')
+
+tf.app.flags.DEFINE_string('outputs_dir', '/home/chenyifeng/TF_Outs/SEGS/fcn/validation',
                            'where to store summary log')
 
 tf.app.flags.DEFINE_string('pretrained_ckpts', '/home/chenyifeng/TF_Models/ptrain/vgg_16.ckpt',
@@ -101,7 +104,6 @@ with arg_scope([get_variable], device=store_device):
         mean_iou, ious = validation_metrics_dict['mIOU']
         mean_prc, prcs = validation_metrics_dict['mPRC']
         mean_rec, recs = validation_metrics_dict['mREC']
-        print(ious)
         # calculate loss
         mean_loss = softmax_with_logits(score_map, label_batch)
         reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -128,10 +130,9 @@ with tf.name_scope('summary_io'):
 
 with tf.name_scope('class_wise_metrics'):
     for i in range(FLAGS.num_classes):
-        print(i)
-        tf.add_to_collection('{}_iou'.format(pascal_voc_classes[i]), ious[i])
-        tf.add_to_collection('{}_prc'.format(pascal_voc_classes[i]), prcs[i])
-        tf.add_to_collection('{}_rec'.format(pascal_voc_classes[i]), recs[i])
+        tf.summary.scalar('{}_iou'.format(pascal_voc_classes[i]), ious[i])
+        tf.summary.scalar('{}_prc'.format(pascal_voc_classes[i]), prcs[i])
+        tf.summary.scalar('{}_rec'.format(pascal_voc_classes[i]), recs[i])
 
 with tf.name_scope('summary_vars'):
     for weight in weight_vars:
@@ -176,16 +177,24 @@ try:
     local_step = 0
     sess.run(tf.local_variables_initializer())
     while True:  # train until OutOfRangeError
-        # batch_mIOU, batch_mAP, batch_tloss, batch_rloss, summary = \
-        #     sess.run([mean_IOU, mean_acc, mean_loss, reg_loss, merge_summary])
-        _, HAHA = \
-            sess.run([update_ops, tf.get_collection('shenjin')])
-        print(HAHA)
-        # train_writer.add_summary(summary, local_step)
-        # local_step += 1
+        name_batch_v, image_batch_v, label_batch_v, class_map_v, _ , \
+        batch_mIOU, batch_mAP, batch_tloss, batch_rloss, summary = \
+            sess.run([name_batch, image_batch, label_batch, class_map, update_ops,
+                      mean_iou, mean_acc, mean_loss, reg_loss, merge_summary])
+
+        if not os.path.exists(FLAGS.outputs_dir):
+            os.makedirs(FLAGS.outputs_dir)
+
+        for idx, name in enumerate(name_batch_v):
+            np.save(os.path.join(FLAGS.outputs_dir, name.decode()+'_image.npy'), image_batch_v[idx,:])
+            np.save(os.path.join(FLAGS.outputs_dir, name.decode()+'_label.npy'), label_batch_v[idx,:])
+            np.save(os.path.join(FLAGS.outputs_dir, name.decode()+'_prediction.npy'), class_map_v[idx,:])
+
+        train_writer.add_summary(summary, local_step)
+        local_step += 1
         #
-        # print("Step {} : mAP {:.3f}%  mIOU {:.3f}% loss {:.3f} reg {:.3f}"
-        #       .format(local_step, batch_mAP * 100, batch_mIOU * 100, batch_tloss, batch_rloss))
+        print("Step {} : mAP {:.3f}%  mIOU {:.3f}% loss {:.3f} reg {:.3f}"
+              .format(local_step, batch_mAP * 100, batch_mIOU * 100, batch_tloss, batch_rloss))
 
 except tf.errors.OutOfRangeError:
     print('Done Validating')
