@@ -1,6 +1,6 @@
 import os
 
-from datasets.pascal_voc_reader import get_dataset, get_next_batch, TRAIN_DIR
+from datasets.pascal_voc_reader import get_dataset, get_next_batch, TRAIN_DIR, VALIDATION_DIR
 from datasets.pascal_voc_utils import pascal_voc_classes
 from segs.factory import get_net
 from tf_ops.benchmarks import validation_metrics
@@ -21,12 +21,12 @@ tf.app.flags.DEFINE_string('net_name', 'fcn8', 'which segmentation net to use')
 tf.app.flags.DEFINE_integer('num_classes', 21, '#classes')
 
 # learning configs
-tf.app.flags.DEFINE_integer('epoch_num', 64, 'epoch_nums')
+tf.app.flags.DEFINE_integer('epoch_num', 1, 'epoch_nums')
 tf.app.flags.DEFINE_integer('batch_size', 1, 'batch size')
 
 # deploy configs
-tf.app.flags.DEFINE_string('store_device', 'cpu', 'where to place the variables')
-tf.app.flags.DEFINE_string('run_device', '0', 'where to run the models')
+tf.app.flags.DEFINE_string('store_device', '/GPU:0', 'where to place the variables')
+tf.app.flags.DEFINE_string('run_device', '1', 'where to run the models')
 tf.app.flags.DEFINE_float('gpu_fraction', 0.8, 'gpu memory fraction')
 tf.app.flags.DEFINE_boolean('allow_growth', True, 'allow memory growth')
 
@@ -37,10 +37,10 @@ tf.app.flags.DEFINE_float('bias_reg_scale', None, 'bias regularization scale')
 tf.app.flags.DEFINE_string('bias_reg_func', None, 'use which func to regularize bias')
 
 # model load & save configs
-tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS/fcn/validation',
+tf.app.flags.DEFINE_string('summaries_dir', '/home/chenyifeng/TF_Logs/SEGS/fcn/validation2',
                            'where to store summary log')
 
-tf.app.flags.DEFINE_string('outputs_dir', '/home/chenyifeng/TF_Outs/SEGS/fcn/validation',
+tf.app.flags.DEFINE_string('outputs_dir', '/home/chenyifeng/TF_Outs/SEGS/fcn/validation2',
                            'where to store summary log')
 
 tf.app.flags.DEFINE_string('pretrained_ckpts', '/home/chenyifeng/TF_Models/ptrain/vgg_16.ckpt',

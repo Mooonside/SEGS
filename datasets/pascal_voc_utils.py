@@ -28,11 +28,7 @@ pascal_voc_palette = np.array([[0, 0, 0],
                                [0, 64, 128]], dtype='uint8')
 
 pascal_voc_classes = [
-<<<<<<< HEAD
     'background',
-=======
-    'background'
->>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
     'aeroplane',
     'bicycle',
     'bird',
