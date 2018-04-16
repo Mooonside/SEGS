@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+<<<<<<< HEAD
 from tensorflow.python.ops.metrics_impl import _streaming_confusion_matrix
 
 
@@ -158,10 +159,33 @@ def mIOU(predictions=None, labels=None, confusion_mat=None, ignore_label=None, n
     :param updates_collections:
     :param streaming:
     :param confusion_mat:
+=======
+from tf_ops.wrap_ops import tensor_shape
+
+
+def mAP(tensor1, tensor2):
+    shape1 = tensor_shape(tensor1)
+    shape2 = tensor_shape(tensor2)
+    type1 = tensor1.dtype
+    type2 = tensor2.dtype
+
+    assert shape1 == shape2
+    assert type1 == type2
+
+    equal = tf.cast(tf.equal(tensor1, tensor2), tf.float32)
+    acc = tf.reduce_mean(equal, name='mAP')
+    return acc
+
+
+def mIOU(predictions, labels, ignore_label=[0], num_classes=21, max_classes=255 + 1):
+    """
+    return mean_iou, which eliminates ignore label, and ious which keep ignored label
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
     :param predictions:
     :param labels:
     :param ignore_label:
     :param num_classes:
+<<<<<<< HEAD
     :return: mean_iou and ious
     """
     assert not (confusion_mat is None and (predictions is None or labels is None))
@@ -188,6 +212,23 @@ def mIOU(predictions=None, labels=None, confusion_mat=None, ignore_label=None, n
     col_sum = tf.reduce_sum(confusion_mat, axis=1)
 
     denominator = row_sum + col_sum - diag
+=======
+    :return:
+    """
+    ignore_label = [0 if i in ignore_label else 1 for i in range(num_classes)]
+
+    confusion_mat = tf.confusion_matrix(predictions=tf.reshape(predictions, [-1]),
+                                        labels=tf.reshape(labels, [-1]),
+                                        num_classes=max_classes)
+    # ignore those invalid labels
+    confusion_mat = confusion_mat[:num_classes, :num_classes]
+    diag = tf.diag_part(confusion_mat)
+    row_sum = tf.reduce_sum(confusion_mat, axis=0)
+    col_sum = tf.reduce_sum(confusion_mat, axis=1)
+
+    denominator = row_sum + col_sum - diag
+
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
     selector = tf.cast(
         tf.equal(denominator, 0), tf.int32)
     denominator += selector

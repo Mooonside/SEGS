@@ -66,7 +66,11 @@ def same_padding(inputs, ksize, ratios):
 
 @add_arg_scope
 def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, padding='SAME', activate=tf.nn.relu,
+<<<<<<< HEAD
            batch_norm=True, use_bias=None, weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer,
+=======
+           batch_norm=True, use_bias=False, weight_init=None, weight_reg=None, bias_init=tf.zeros_initializer,
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
            bias_reg=None, outputs_collections=None):
     """
     Wrapper for Conv layers
@@ -88,8 +92,11 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
     :return: convolution after activation
     """
     # can't use both
+<<<<<<< HEAD
     if use_bias is None:
         use_bias = not batch_norm
+=======
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
     assert not (batch_norm and use_bias)
     indim = tensor_shape(inputs)[-1]
 
@@ -287,7 +294,11 @@ def avg_pool2d(inputs, ksize=[2, 2], strides=[2, 2], padding='SAME', name=None, 
 
 
 @add_arg_scope
+<<<<<<< HEAD
 def drop_out(inputs, kp_prob, is_training=True, name=None):
+=======
+def drop_out(inputs, kp_prob, is_training, name=None):
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
     if type(kp_prob) != float:
         print('Invalid Parameter Specified {}'.format(kp_prob))
     if is_training:
@@ -339,6 +350,7 @@ def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, na
 
 
 @add_arg_scope
+<<<<<<< HEAD
 def l2_norm_1D(inputs, norm_dim=-1, eps=1e-12, scale=True, scale_initializer=tf.ones_initializer, scope=None):
     with tf.variable_scope(scope, 'L2_Norm1D', [inputs]) as sc:
         # output = x / sqrt(max(sum(x**2), epsilon))
@@ -351,6 +363,8 @@ def l2_norm_1D(inputs, norm_dim=-1, eps=1e-12, scale=True, scale_initializer=tf.
 
 
 @add_arg_scope
+=======
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
 def regularizer(mode, scale, scope=None):
     if mode is None or scale is None:
         return None
@@ -452,6 +466,7 @@ def softmax_with_logits(predictions, labels,
 
     if weights is not None:
         loss *= weights
+<<<<<<< HEAD
         mask *= tf.cast(tf.not_equal(weights, 0), tf.float32)
 
     loss = tf.where(
@@ -459,11 +474,16 @@ def softmax_with_logits(predictions, labels,
         tf.constant(0.0, dtype=tf.float32),
         tf.divide(tf.reduce_sum(loss), tf.reduce_sum(mask), name='mean_loss')
     )
+=======
+
+    loss = tf.divide(tf.reduce_sum(loss), tf.reduce_sum(mask), name='mean_loss')
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
     if loss_collections is not None:
         tf.add_to_collection(loss_collections, loss)
     return loss
 
 
+<<<<<<< HEAD
 def ms_softmax_with_logits(scales_to_logits,
                            labels,
                            ignore_label,
@@ -510,6 +530,8 @@ def ms_softmax_with_logits(scales_to_logits,
     return total_loss
 
 
+=======
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
 def smooth_l1(x):
     square_selector = tf.cast(tf.less(tf.abs(x), 1), tf.float32)
     x = square_selector * 0.5 * tf.square(x) + (1 - square_selector) * (tf.abs(x) - 0.5)

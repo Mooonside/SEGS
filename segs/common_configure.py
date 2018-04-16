@@ -29,7 +29,11 @@ def DeepLabFlags(flags=None):
     flags.DEFINE_enum('model_variant', 'xception_65',
                       ['xception_65', 'mobilenet_v2'], 'DeepLab model variant.')
 
+<<<<<<< HEAD
     flags.DEFINE_multi_float('image_pyramid', [1.0],
+=======
+    flags.DEFINE_multi_float('image_pyramid', [1.0, 2.0],
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
                              'Input scales for multi-scale feature extraction.')
 
     flags.DEFINE_boolean('add_image_level_feature', True,
@@ -69,9 +73,12 @@ def DeepLabFlags(flags=None):
     flags.DEFINE_boolean('fine_tune_batch_norm', True,
                          'Fine tune the batch norm parameters or not.')
 
+<<<<<<< HEAD
     flags.DEFINE_boolean('upsample_logits', True,
                          'whether upsample logits to compute loss. If set False, then labels are downsanpled')
 
+=======
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
     flags = flags.FLAGS
     flags.outputs_to_num_classes = {'semantic': flags.outputs_to_num_classes}
     return flags

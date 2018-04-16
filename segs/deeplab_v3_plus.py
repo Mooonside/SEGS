@@ -56,8 +56,12 @@ import tensorflow as tf
 
 from backbones import feature_extractor
 from segs.common_configure import DeepLabFlags
+<<<<<<< HEAD
 from tf_ops.wrap_ops import conv2d, sep_conv2d, drop_out, arg_scope, regularizer, \
     batch_norm2d, avg_pool2d, ms_softmax_with_logits
+=======
+from tf_ops.wrap_ops import conv2d, sep_conv2d, drop_out, arg_scope, regularizer, batch_norm2d, avg_pool2d
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
 
 _LOGITS_SCOPE_NAME = 'logits'
 _MERGED_LOGITS_SCOPE = 'merged_logits'
@@ -162,6 +166,7 @@ def multi_scale_logits(images,
       fine_tune_batch_norm: Fine-tune the batch norm parameters or not.
 
     Returns:
+<<<<<<< HEAD
         {
             'TASK_NAME':{
                 Image_Scale : feature
@@ -172,6 +177,8 @@ def multi_scale_logits(images,
             ...(IF MORE TASKS)
         }
 
+=======
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
       outputs_to_scales_to_logits: A map of maps from output_type (e.g.,
         semantic prediction) to a dictionary of multi-scale logits names to
         logits. For each output_type, the dictionary has keys which
@@ -617,7 +624,11 @@ def _get_branch_logits(features,
             return tf.add_n(branch_logits)
 
 
+<<<<<<< HEAD
 def _build_deeplab(images, labels, ignore_label, FLAGS):
+=======
+def _build_deeplab(images, FLAGS):
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
     """Builds a clone of DeepLab.
 
     Args:
@@ -644,6 +655,7 @@ def _build_deeplab(images, labels, ignore_label, FLAGS):
         is_training=False,
         fine_tune_batch_norm=FLAGS.fine_tune_batch_norm)
 
+<<<<<<< HEAD
     loss = None
     for output, num_classes in outputs_to_scales_to_logits.items():
         loss = ms_softmax_with_logits(
@@ -654,10 +666,24 @@ def _build_deeplab(images, labels, ignore_label, FLAGS):
             scope=output)
 
     return outputs_to_scales_to_logits, loss
+=======
+    # for output, num_classes in outputs_to_num_classes.iteritems():
+    #     train_utils.add_softmax_cross_entropy_loss_for_each_scale(
+    #         outputs_to_scales_to_logits[output],
+    #         samples[common.LABEL],
+    #         num_classes,
+    #         ignore_label,
+    #         loss_weight=1.0,
+    #         upsample_logits=FLAGS.upsample_logits,
+    #         scope=output)
+
+    return outputs_to_scales_to_logits
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
 
 
 if __name__ == '__main__':
     FLAGS = DeepLabFlags()
+<<<<<<< HEAD
     # np.save('inputs_v.npy', inputs_v)
     with tf.device('/CPU:0'):
         inputs = tf.placeholder(name='inputs', shape=[16, 513, 513, 3], dtype=tf.float32)
@@ -672,6 +698,22 @@ if __name__ == '__main__':
 
     outv = sess.run(loss, feed_dict={inputs: inputs_v, labels: labels_v})
 
+=======
+    inputs_v = np.load('inputs_v.npy')
+    # np.save('inputs_v.npy', inputs_v)
+    with tf.device('/CPU:0'):
+        inputs = tf.placeholder(name='inputs', shape=[16, 513, 513, 3], dtype=tf.float32)
+        outputs_to_scales_to_logits = _build_deeplab(inputs, FLAGS)
+
+    # for i in tf.global_variables():
+    #     print(i)
+    #     sess = tf.Session()
+    #     saver = tf.train.Saver()
+    #     saver.restore(sess, save_path='/home/yifeng/Models/pretrain/SEGS/xception_voc_trainval/model.ckpt')
+    #
+    #     outv = sess.run(outputs_to_scales_to_logits, feed_dict={inputs:inputs_v})
+    #
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
     # print(np.mean(inputs_v), np.var(inputs_v))
     # def print_dict(d):
     #     if type(d) is dict:

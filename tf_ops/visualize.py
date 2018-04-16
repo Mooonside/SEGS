@@ -22,6 +22,10 @@ def compare(predictions, labels):
     return paint
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
 def locate_boundary(labels):
     """ locate boundaries in labels
     todo: test this function
@@ -44,6 +48,7 @@ def locate_boundary(labels):
     return boundary
 
 
+<<<<<<< HEAD
 def draw_bbox(image, scores, bboxes):
     for class_id in scores.keys():
         if class_id == 0:
@@ -56,3 +61,12 @@ def draw_bbox(image, scores, bboxes):
         class_bboxes = tf.expand_dims(class_bboxes, axis=0)
         image = tf.image.draw_bounding_boxes(image, class_bboxes)
     return image
+=======
+def draw_bbox(image, bboxes):
+    if tensor_shape(image) == 3:
+        image = tf.expand_dims(image, axis=1)
+    if tensor_shape(bboxes) == 2:
+        bboxes = tf.expand_dims(bboxes, axis=1)
+    after = tf.image.draw_bounding_boxes(image, bboxes)
+    return after
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2

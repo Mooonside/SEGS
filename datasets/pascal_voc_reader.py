@@ -37,12 +37,21 @@ from tensorflow.python.ops import image_ops
 FLAGS = None
 
 # Constants used for dealing with the files, matches convert_to_records.
+<<<<<<< HEAD
 TRAIN_DIR = '/mnt/disk50/datasets/VOC2012/tf_segments/tf_records/train'
 VALIDATION_DIR = '/mnt/disk50/datasets/VOC2012/tf_segments/tf_records/val'
+=======
+TRAIN_DIR = '/mnt/disk/chenyifeng/VOC2012/tf_segments/tf_records/train'
+VALIDATION_DIR = '/mnt/disk/chenyifeng/VOC2012/tf_segments/tf_records/val'
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
 TRAIN_NUM = 10582
 VALID_NUM = 1449
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> c7a1431cf14c39f7216eebd64388f13fb13bada2
 def decode(serialized_example):
     features = tf.parse_single_example(
         serialized_example,
