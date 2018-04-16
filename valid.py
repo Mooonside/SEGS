@@ -21,7 +21,11 @@ tf.app.flags.DEFINE_string('net_name', 'fcn8', 'which segmentation net to use')
 tf.app.flags.DEFINE_integer('num_classes', 21, '#classes')
 
 # learning configs
+<<<<<<< HEAD
 tf.app.flags.DEFINE_integer('epoch_num', 64, 'epoch_nums')
+=======
+tf.app.flags.DEFINE_integer('epoch_num',32, 'epoch_nums')
+>>>>>>> dd4b38b50f1d687618c6c80ede3ce5d0c4f48b4b
 tf.app.flags.DEFINE_integer('batch_size', 1, 'batch size')
 
 # deploy configs
