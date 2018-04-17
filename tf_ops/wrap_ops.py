@@ -297,7 +297,7 @@ def drop_out(inputs, kp_prob, is_training=True, name=None):
 
 
 @add_arg_scope
-def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, name=None):
+def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, force_update=False, name=None):
     """
     Do channel-wise batch normalization
     :param inputs: print(shape1, shape2)
@@ -310,31 +310,49 @@ def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, na
     """
     with tf.variable_scope(name, default_name='BatchNorm2d'):
         params_shape = tensor_shape(inputs)[-1:]
-        moving_mean = tf.get_variable('mean', params_shape,
+        moving_mean = tf.get_variable('moving_mean', params_shape,
                                       initializer=tf.zeros_initializer,
                                       trainable=False)
-        moving_variance = tf.get_variable('variance', params_shape,
+        moving_variance = tf.get_variable('moving_variance', params_shape,
                                           initializer=tf.ones_initializer,
                                           trainable=False)
 
-        def mean_var_with_update():
-            # update moving_moments
-            axes = list(np.arange(len(inputs.get_shape()) - 1))
-            mean, variance = tf.nn.moments(inputs, axes, name='moments')
-            with tf.control_dependencies([assign_moving_average(moving_mean, mean, decay, zero_debias=False),
-                                          assign_moving_average(moving_variance, variance, decay, zero_debias=False)]):
-                # https://stackoverflow.com/questions/34877523/in-tensorflow-what-is-tf-identity-used-for
-                return tf.identity(mean), tf.identity(variance)
+        # mean_var_with_update is deprecated !
+        # tf.nn.moments is computing the sample variance,
+        # whereas tf.nn.fused_batch_norm is computing the unbiased variance estimator.
+        # The difference between the two is a factor n/n-1
+        # def mean_var_with_update():
+        #     # update moving_moments
+        #     axes = list(np.arange(len(inputs.get_shape()) - 1))
+        #     mean, variance = tf.nn.moments(inputs, axes, name='moments')
+        #     with tf.control_dependencies([assign_moving_average(moving_mean, mean, decay, zero_debias=False),
+        #                                   assign_moving_average(moving_variance, variance, decay, zero_debias=False)]):
+        #         # https://stackoverflow.com/questions/34877523/in-tensorflow-what-is-tf-identity-used-for
+        #         return tf.identity(mean), tf.identity(variance)
 
-        mean, variance = tf.cond(tf.constant(is_training), mean_var_with_update, lambda: (moving_mean, moving_variance))
         if affine:
             beta = tf.get_variable('beta', params_shape, initializer=tf.zeros_initializer,
                                    collections=BN_COLLECTIONS)
             gamma = tf.get_variable('gamma', params_shape, initializer=tf.ones_initializer,
                                     collections=BN_COLLECTIONS)
-            outputs = tf.nn.batch_normalization(inputs, mean, variance, beta, gamma, eps)
         else:
-            outputs = tf.nn.batch_normalization(inputs, mean, variance, None, None, eps)
+            gamma = tf.constant(value=np.ones(params_shape, dtype=np.float32))
+            beta = tf.constant(value=np.zeros(params_shape, dtype=np.float32))
+
+        def training_mode():
+            outputs, batch_mean, batch_var = tf.nn.fused_batch_norm(inputs, gamma, beta, epsilon=eps)
+            return outputs, batch_mean, batch_var
+
+        def inference_mode():
+            outputs, batch_mean, batch_var = tf.nn.fused_batch_norm(inputs, gamma, beta, moving_mean, moving_variance,
+                                                                    epsilon=eps, is_training=False)
+            return outputs, batch_mean, batch_var
+
+        outputs, batch_mean, batch_var = tf.cond(tf.constant(is_training), training_mode, inference_mode)
+        update_ops = [assign_moving_average(moving_mean, batch_mean, decay, zero_debias=False),
+                      assign_moving_average(moving_variance, batch_var, decay, zero_debias=False)]
+        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_ops)
+
         return outputs
 
 
