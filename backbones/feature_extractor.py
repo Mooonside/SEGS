@@ -19,19 +19,21 @@ import functools
 import tensorflow as tf
 
 from backbones.vgg_16 import vgg_16, vgg_arg_scope
-from backbones.xception import xception_65, xception_arg_scope
+from backbones.xception import xception_65, xception_65_detection, xception_arg_scope
 from tf_ops.wrap_ops import arg_scope
 
 # A map from network name to network function.
 networks_map = {
     'vgg_16': vgg_16,
     'xception_65': xception_65,
+    'xception_65_detection': xception_65_detection,
 }
 
 # A map from network name to network arg scope.
 arg_scopes_map = {
     'vgg_16': vgg_arg_scope,
     'xception_65': xception_arg_scope,
+    'xception_65_detection': xception_arg_scope,
 }
 
 # Names for end point features.
@@ -41,7 +43,12 @@ DECODER_END_POINTS = 'decoder_end_points'
 networks_to_feature_maps = {
     'xception_65': {
         DECODER_END_POINTS: [
-            'entry_flow/block2/unit_1/xception_module/separable_conv2/pointwise_conv/BatchNorm2d/batchnorm/add_1:0',
+            'entry_flow/block2/unit_1/xception_module/separable_conv2/pointwise_conv/BatchNorm2d/cond/Merge:0',
+        ],
+    },
+    'xception_65_detection': {
+        DECODER_END_POINTS: [
+            'entry_flow/block2/unit_1/xception_module/separable_conv2/pointwise_conv/BatchNorm2d/cond/Merge:0',
         ],
     }
 }
@@ -51,6 +58,7 @@ networks_to_feature_maps = {
 name_scope = {
     'vgg_16': 'vgg_16',
     'xception_65': 'xception_65',
+    'xception_65_detection': 'xception_65',
 }
 
 # Mean pixel value.
@@ -71,6 +79,7 @@ def _preprocess_zero_mean_unit_range(inputs):
 _PREPROCESS_FN = {
     'vgg_16': _preprocess_zero_mean_unit_range,
     'xception_65': _preprocess_zero_mean_unit_range,
+    'xception_65_detection': _preprocess_zero_mean_unit_range,
 }
 
 

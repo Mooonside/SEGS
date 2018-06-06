@@ -1,6 +1,31 @@
 import tensorflow as tf
 
 
+def jupyter_flag(model_variant='xception_65'):
+    class flags:
+        pass
+
+    flags.crop_size = [513, 513]
+    flags.outputs_to_num_classes = [['semantic', 21]]
+    flags.logits_kernel_size = 1
+    flags.atrous_rates = [6, 12, 18]
+    flags.output_stride = 16
+    flags.model_variant = model_variant
+    flags.image_pyramid = None
+    flags.add_image_level_feature = True
+    flags.aspp_with_batch_norm = True
+    flags.aspp_with_separable_conv = True
+    flags.multi_grid = None
+    flags.depth_multiplier = 1
+    flags.decoder_output_stride = 4
+    flags.decoder_use_separable_conv = True
+    flags.merge_method = 'max'
+    flags.weight_decay = 5e-4
+    flags.fine_tune_batch_norm = True
+    flags.upsample_logits = True
+    return flags
+
+
 def DeepLabFlags(flags=None):
     if flags is None:
         flags = tf.app.flags
@@ -8,7 +33,7 @@ def DeepLabFlags(flags=None):
     # Flags for input preprocessing.
     flags.DEFINE_multi_integer('crop_size', [513, 513], 'Desired crop size.')
 
-    flags.DEFINE_integer('outputs_to_num_classes', 21, '# num of classes.')
+    flags.DEFINE_list('outputs_to_num_classes', [['semantic', 21]], '#classes of different tasks')
 
     # Model dependent flags.
     flags.DEFINE_integer('logits_kernel_size', 1,
@@ -29,7 +54,7 @@ def DeepLabFlags(flags=None):
     flags.DEFINE_enum('model_variant', 'xception_65',
                       ['xception_65', 'mobilenet_v2'], 'DeepLab model variant.')
 
-    flags.DEFINE_multi_float('image_pyramid', [1.0],
+    flags.DEFINE_multi_float('image_pyramid', None,
                              'Input scales for multi-scale feature extraction.')
 
     flags.DEFINE_boolean('add_image_level_feature', True,
@@ -66,12 +91,9 @@ def DeepLabFlags(flags=None):
 
     # Set to True if one wants to fine-tune the batch norm parameters in DeepLabv3.
     # Set to False and use small batch size to save GPU memory.
-    flags.DEFINE_boolean('fine_tune_batch_norm', True,
+    flags.DEFINE_boolean('fine_tune_batch_norm', False,
                          'Fine tune the batch norm parameters or not.')
 
     flags.DEFINE_boolean('upsample_logits', True,
                          'whether upsample logits to compute loss. If set False, then labels are downsanpled')
-
-    flags = flags.FLAGS
-    flags.outputs_to_num_classes = {'semantic': flags.outputs_to_num_classes}
     return flags

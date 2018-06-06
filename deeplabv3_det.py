@@ -1,64 +1,13 @@
-# Copyright 2018 The TensorFlow Authors All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-r"""Provides DeepLab model definition and helper functions.
-
-DeepLab is a deep learning system for semantic image segmentation with
-the following features:
-
-(1) Atrous convolution to explicitly control the resolution at which
-feature responses are computed within Deep Convolutional Neural Networks.
-
-(2) Atrous spatial pyramid pooling (ASPP) to robustly segment objects at
-multiple scales with filters at multiple sampling rates and effective
-fields-of-views.
-
-(3) ASPP module augmented with image-level feature and batch normalization.
-
-(4) A simple yet effective decoder module to recover the object boundaries.
-
-See the following papers for more details:
-
-"Encoder-Decoder with Atrous Separable Convolution for Semantic Image
-Segmentation"
-Liang-Chieh Chen, Yukun Zhu, George Papandreou, Florian Schroff, Hartwig Adam.
-(https://arxiv.org/abs/1802.02611)
-
-"Rethinking Atrous Convolution for Semantic Image Segmentation,"
-Liang-Chieh Chen, George Papandreou, Florian Schroff, Hartwig Adam
-(https://arxiv.org/abs/1706.05587)
-
-"DeepLab: Semantic Image Segmentation with Deep Convolutional Nets,
-Atrous Convolution, and Fully Connected CRFs",
-Liang-Chieh Chen*, George Papandreou*, Iasonas Kokkinos, Kevin Murphy,
-Alan L Yuille (* equal contribution)
-(https://arxiv.org/abs/1606.00915)
-
-"Semantic Image Segmentation with Deep Convolutional Nets and Fully Connected
-CRFs"
-Liang-Chieh Chen*, George Papandreou*, Iasonas Kokkinos, Kevin Murphy,
-Alan L. Yuille (* equal contribution)
-(https://arxiv.org/abs/1412.7062)
-"""
 import tensorflow as tf
 
 from backbones import feature_extractor
-from segs.common_configure import DeepLabFlags
+from segs.common_configure import jupyter_flag
+from segs.deeplabv3_detection_common import detection_feature_layers, detection_anchors
 from tf_ops.wrap_ops import conv2d, sep_conv2d, drop_out, arg_scope, regularizer, \
-    batch_norm2d, avg_pool2d, ms_softmax_with_logits
+    batch_norm2d, avg_pool2d, tensor_shape
 
 _LOGITS_SCOPE_NAME = 'logits'
+_DETECTION_SCOPE_NAME = 'detection_logits'
 _MERGED_LOGITS_SCOPE = 'merged_logits'
 _IMAGE_POOLING_SCOPE = 'image_pooling'
 _ASPP_SCOPE = 'aspp'
@@ -73,54 +22,6 @@ class DEBUG:
 
 
 DEBUG_VARS = DEBUG()
-
-
-def get_extra_layer_scopes():
-    """Gets the scopes for extra layers.
-
-    Returns:
-      A list of scopes for extra layers.
-    """
-    return [
-        _LOGITS_SCOPE_NAME,
-        _IMAGE_POOLING_SCOPE,
-        _ASPP_SCOPE,
-        _CONCAT_PROJECTION_SCOPE,
-        _DECODER_SCOPE,
-    ]
-
-
-def predict_labels(images, model_options, outputs_to_num_classes, image_pyramid=None):
-    """Predicts segmentation labels.
-
-    Args:
-      images: A tensor of size [batch, height, width, channels].
-      model_options: A ModelOptions instance to configure models.
-      image_pyramid: Input image scales for multi-scale feature extraction.
-
-    Returns:
-      A dictionary with keys specifying the output_type (e.g., semantic
-        prediction) and values storing Tensors representing predictions (argmax
-        over channels). Each prediction has size [batch, height, width].
-    """
-    outputs_to_scales_to_logits = multi_scale_logits(
-        images,
-        model_options=model_options,
-        image_pyramid=image_pyramid,
-        is_training=False,
-        outputs_to_num_classes=outputs_to_num_classes,
-        fine_tune_batch_norm=False)
-
-    predictions = {}
-    for output in sorted(outputs_to_scales_to_logits):
-        scales_to_logits = outputs_to_scales_to_logits[output]
-        logits = tf.image.resize_bilinear(
-            scales_to_logits[_MERGED_LOGITS_SCOPE],
-            tf.shape(images)[1:3],
-            align_corners=True)
-        predictions[output] = tf.argmax(logits, 3)
-
-    return predictions
 
 
 def scale_dimension(dim, scale):
@@ -139,150 +40,6 @@ def scale_dimension(dim, scale):
         return tf.cast((tf.to_float(dim) - 1.0) * scale + 1.0, dtype=tf.int32)
     else:
         return int((float(dim) - 1.0) * scale + 1.0)
-
-
-def multi_scale_logits(images,
-                       model_options,
-                       image_pyramid,
-                       outputs_to_num_classes,
-                       weight_decay=0.0001,
-                       is_training=False,
-                       fine_tune_batch_norm=False):
-    """Gets the logits for multi-scale inputs.
-
-    The returned logits are all downsampled (due to max-pooling layers)
-    for both training and evaluation.
-
-    Args:
-      images: A tensor of size [batch, height, width, channels].
-      model_options: A ModelOptions instance to configure models.
-      image_pyramid: Input image scales for multi-scale feature extraction.
-
-      weight_decay: The weight decay for model variables.
-      is_training: Is training or not.
-      fine_tune_batch_norm: Fine-tune the batch norm parameters or not.
-
-    Returns:
-        {
-            'TASK_NAME':{
-                Image_Scale : feature
-                ......
-                _MERGED_LOGITS_SCOPE : merged feature
-
-            }
-            ...(IF MORE TASKS)
-        }
-
-      outputs_to_scales_to_logits: A map of maps from output_type (e.g.,
-        semantic prediction) to a dictionary of multi-scale logits names to
-        logits. For each output_type, the dictionary has keys which
-        correspond to the scales and values which correspond to the logits.
-        For example, if `scales` equals [1.0, 1.5], then the keys would
-        include 'merged_logits', 'logits_1.00' and 'logits_1.50'.
-
-    Raises:
-      ValueError: If model_options doesn't specify crop_size and its
-        add_image_level_feature = True, since add_image_level_feature requires
-        crop_size information.
-    """
-    # Setup default values.
-    if not image_pyramid:
-        image_pyramid = [1.0]
-
-    if model_options.crop_size is None and model_options.add_image_level_feature:
-        raise ValueError(
-            'Crop size must be specified for using image-level feature.')
-    if model_options.model_variant == 'mobilenet_v2':
-        if (model_options.atrous_rates is not None or
-                model_options.decoder_output_stride is not None):
-            # Output a warning and users should make sure if the setting is desired.
-            tf.logging.warning('Our provided mobilenet_v2 checkpoint does not '
-                               'include ASPP and decoder modules.')
-
-    crop_height = (
-        # 514
-        model_options.crop_size[0]
-        if model_options.crop_size else tf.shape(images)[1])
-    crop_width = (
-        model_options.crop_size[1]
-        if model_options.crop_size else tf.shape(images)[2])
-
-    # Compute the height, width for the output logits.
-    # default to 16 , i.e. final predictions is [H/16, W/16]
-    logits_output_stride = (
-            model_options.decoder_output_stride or model_options.output_stride)
-
-    logits_height = scale_dimension(
-        crop_height,
-        max(1.0, max(image_pyramid)) / logits_output_stride)
-    logits_width = scale_dimension(
-        crop_width,
-        max(1.0, max(image_pyramid)) / logits_output_stride)
-
-    # Compute the logits for each scale in the image pyramid.
-    outputs_to_scales_to_logits = {
-        k: {}
-        for k in outputs_to_num_classes
-    }
-
-    for count, image_scale in enumerate(image_pyramid):
-        # print('scale is {}'.format(image_scale))
-        if image_scale != 1.0:
-            scaled_height = scale_dimension(crop_height, image_scale)
-            scaled_width = scale_dimension(crop_width, image_scale)
-            scaled_crop_size = [scaled_height, scaled_width]
-            scaled_images = tf.image.resize_bilinear(
-                images, scaled_crop_size, align_corners=True)
-            if model_options.crop_size:
-                scaled_images.set_shape([None, scaled_height, scaled_width, 3])
-        else:
-            scaled_crop_size = model_options.crop_size
-            scaled_images = images
-
-        model_options.crop_size = scaled_crop_size
-        outputs_to_logits = _get_logits(
-            scaled_images,
-            model_options,
-            weight_decay=weight_decay,
-            reuse=tf.AUTO_REUSE,
-            is_training=is_training,
-            outputs_to_num_classes=outputs_to_num_classes,
-            fine_tune_batch_norm=fine_tune_batch_norm)
-
-        # Resize the logits to have the same dimension before merging.
-        for output in sorted(outputs_to_logits):
-            # resize_bilinear requires channel to be one or three
-            outputs_to_logits[output] = tf.image.resize_bilinear(
-                outputs_to_logits[output], [logits_height, logits_width],
-                align_corners=True)
-
-        # Return when only one input scale.
-        if len(image_pyramid) == 1:
-            for output in sorted(outputs_to_num_classes):
-                outputs_to_scales_to_logits[output][
-                    _MERGED_LOGITS_SCOPE] = outputs_to_logits[output]
-            return outputs_to_scales_to_logits
-
-        # Save logits to the output map.
-        for output in sorted(outputs_to_num_classes):
-            outputs_to_scales_to_logits[output][
-                'logits_%.2f' % image_scale] = outputs_to_logits[output]
-
-    # Merge the logits from all the multi-scale inputs.
-    for output in sorted(outputs_to_num_classes):
-        # Concatenate the multi-scale logits for each output type.
-        all_logits = [
-            tf.expand_dims(logits, axis=4)
-            for logits in outputs_to_scales_to_logits[output].values()
-        ]
-        all_logits = tf.concat(all_logits, 4)
-        merge_fn = (
-            tf.reduce_max
-            if model_options.merge_method == 'max' else tf.reduce_mean)
-        outputs_to_scales_to_logits[output][_MERGED_LOGITS_SCOPE] = merge_fn(
-            all_logits, axis=4)
-
-    return outputs_to_scales_to_logits
 
 
 def _extract_features(images,
@@ -348,9 +105,10 @@ def _extract_features(images,
                         if model_options.add_image_level_feature:
                             # this crop size has been updated to the new scaled one outside, which is the exact size
                             # of this model's inputs
-                            pool_height = scale_dimension(model_options.crop_size[0],
+                            _, image_h, image_w, _ = tensor_shape(images)
+                            pool_height = scale_dimension(image_h,
                                                           1. / model_options.output_stride)
-                            pool_width = scale_dimension(model_options.crop_size[1],
+                            pool_width = scale_dimension(image_w,
                                                          1. / model_options.output_stride)
                             # global average pooling, check whether the shape here is 1?
                             image_feature = avg_pool2d(
@@ -394,68 +152,6 @@ def _extract_features(images,
                                                  name=_CONCAT_PROJECTION_SCOPE + '_dropout')
 
                         return concat_logits, end_points
-
-
-def _get_logits(images,
-                model_options,
-                outputs_to_num_classes,
-                weight_decay=0.0001,
-                reuse=tf.AUTO_REUSE,
-                is_training=False,
-                fine_tune_batch_norm=False):
-    """Gets the logits by atrous/image spatial pyramid pooling.
-
-    Args:
-      images: A tensor of size [batch, height, width, channels].
-      model_options: A ModelOptions instance to configure models.
-      weight_decay: The weight decay for model variables.
-      reuse: Reuse the model variables or not.
-      is_training: Is training or not.
-      fine_tune_batch_norm: Fine-tune the batch norm parameters or not.
-
-    Returns:
-      outputs_to_logits: A map from output_type to logits.
-    """
-    features, end_points = _extract_features(
-        images,
-        model_options,
-        weight_decay=weight_decay,
-        reuse=reuse,
-        is_training=is_training,
-        fine_tune_batch_norm=fine_tune_batch_norm)
-
-    # TODO: CHECK
-    DEBUG_VARS.aspp_result = features
-    if model_options.decoder_output_stride is not None:
-        decoder_height = scale_dimension(model_options.crop_size[0],
-                                         1.0 / model_options.decoder_output_stride)
-        decoder_width = scale_dimension(model_options.crop_size[1],
-                                        1.0 / model_options.decoder_output_stride)
-        features = refine_by_decoder(
-            features,
-            end_points,
-            decoder_height=decoder_height,
-            decoder_width=decoder_width,
-            decoder_use_separable_conv=model_options.decoder_use_separable_conv,
-            model_variant=model_options.model_variant,
-            weight_decay=weight_decay,
-            reuse=reuse,
-            is_training=is_training,
-            fine_tune_batch_norm=fine_tune_batch_norm)
-
-    outputs_to_logits = {}
-    for output in sorted(outputs_to_num_classes):
-        outputs_to_logits[output] = _get_branch_logits(
-            features,
-            outputs_to_num_classes[output],
-            model_options.atrous_rates,
-            aspp_with_batch_norm=model_options.aspp_with_batch_norm,
-            kernel_size=model_options.logits_kernel_size,
-            weight_decay=weight_decay,
-            reuse=reuse,
-            scope_suffix=output)
-
-    return outputs_to_logits
 
 
 def refine_by_decoder(features,
@@ -598,9 +294,9 @@ def _get_branch_logits(features,
         atrous_rates = [1]
 
     with arg_scope(
-            [conv2d],
-            weight_reg=regularizer('l2', weight_decay),
-            weight_init=tf.truncated_normal_initializer(stddev=0.01)):
+        [conv2d],
+        weight_reg=regularizer('l2', weight_decay),
+        weight_init=tf.truncated_normal_initializer(stddev=0.01)):
         with tf.variable_scope(_LOGITS_SCOPE_NAME, _LOGITS_SCOPE_NAME, [features], reuse=reuse):
             branch_logits = []
             for i, rate in enumerate(atrous_rates):
@@ -622,73 +318,114 @@ def _get_branch_logits(features,
             return tf.add_n(branch_logits)
 
 
-def _build_deeplab(images, labels, ignore_labels, FLAGS, is_training=True):
-    """Builds a clone of DeepLab.
+def _get_logits(images,
+                model_options,
+                outputs_to_num_classes,
+                weight_decay=0.0001,
+                reuse=tf.AUTO_REUSE,
+                is_training=False,
+                fine_tune_batch_norm=False):
+    """Gets the logits by atrous/image spatial pyramid pooling.
 
     Args:
-      inputs_queue: A prefetch queue for images and labels.
-      ignore_labels: Ignore label.
+      images: A tensor of size [batch, height, width, channels].
+      model_options: A ModelOptions instance to configure models.
+      weight_decay: The weight decay for model variables.
+      reuse: Reuse the model variables or not.
+      is_training: Is training or not.
+      fine_tune_batch_norm: Fine-tune the batch norm parameters or not.
 
     Returns:
-      A map of maps from output_type (e.g., semantic prediction) to a
-        dictionary of multi-scale logits names to logits. For each output_type,
-        the dictionary has keys which correspond to the scales and values which
-        correspond to the logits. For example, if `scales` equals [1.0, 1.5],
-        then the keys would include 'merged_logits', 'logits_1.00' and
-        'logits_1.50'.
+      outputs_to_logits: A map from output_type to logits.
     """
-    outputs_to_num_classes = dict(FLAGS.outputs_to_num_classes)
-
-    outputs_to_scales_to_logits = multi_scale_logits(
+    features, end_points = _extract_features(
         images,
-        model_options=FLAGS,
-        image_pyramid=FLAGS.image_pyramid,
-        weight_decay=FLAGS.weight_decay,
+        model_options,
+        weight_decay=weight_decay,
+        reuse=reuse,
         is_training=is_training,
-        outputs_to_num_classes=outputs_to_num_classes,
-        fine_tune_batch_norm=FLAGS.fine_tune_batch_norm)
-    if labels is None:
-        return outputs_to_scales_to_logits
+        fine_tune_batch_norm=fine_tune_batch_norm)
+    print('ASPP FEATRUES', features)
+    for i in end_points.keys():
+        print(end_points[i])
 
-    loss = None
-    for output, num_classes in outputs_to_scales_to_logits.items():
-        loss = ms_softmax_with_logits(
-            outputs_to_scales_to_logits[output],
-            labels,
-            ignore_labels,
-            upsample_logits=FLAGS.upsample_logits,
-            scope=output)
+    DEBUG_VARS.aspp_result = features
+    if model_options.decoder_output_stride is not None:
+        _, image_h, image_w, _ = tensor_shape(images)
+        decoder_height = scale_dimension(image_h,
+                                         1.0 / model_options.decoder_output_stride)
+        decoder_width = scale_dimension(image_w,
+                                        1.0 / model_options.decoder_output_stride)
+        features = refine_by_decoder(
+            features,
+            end_points,
+            decoder_height=decoder_height,
+            decoder_width=decoder_width,
+            decoder_use_separable_conv=model_options.decoder_use_separable_conv,
+            model_variant=model_options.model_variant,
+            weight_decay=weight_decay,
+            reuse=reuse,
+            is_training=is_training,
+            fine_tune_batch_norm=fine_tune_batch_norm)
 
-    return outputs_to_scales_to_logits, loss
+    outputs_to_logits = {}
+    for output in sorted(outputs_to_num_classes):
+        outputs_to_logits[output] = _get_branch_logits(
+            features,
+            outputs_to_num_classes[output],
+            model_options.atrous_rates,
+            aspp_with_batch_norm=model_options.aspp_with_batch_norm,
+            kernel_size=model_options.logits_kernel_size,
+            weight_decay=weight_decay,
+            reuse=reuse,
+            scope_suffix=output)
+
+        outputs_to_logits['detection'] = _get_detection(
+            end_points,
+            num_classes=outputs_to_num_classes[output],
+            weight_decay=weight_decay,
+            reuse=reuse,
+            scope_suffix='scale'
+        )
+
+    return outputs_to_logits
+
+
+def _get_detection(end_points,
+                   num_classes,
+                   weight_decay=0.0001,
+                   reuse=tf.AUTO_REUSE,
+                   scope_suffix=''
+                   ):
+    with arg_scope(
+        [conv2d],
+        weight_reg=regularizer('l2', weight_decay),
+        weight_init=tf.truncated_normal_initializer(stddev=0.01)):
+        with tf.variable_scope(_DETECTION_SCOPE_NAME, _DETECTION_SCOPE_NAME, [end_points], reuse=reuse):
+            branch_logits = []
+            for layer_idx, layer_name in enumerate(detection_feature_layers):
+                features = end_points[layer_name]
+                branch_logits.append(
+                    conv2d(
+                        features,
+                        outc=len(detection_anchors[layer_idx]) * (4 + num_classes),
+                        ksize=[1, 1],
+                        activate=None,
+                        batch_norm=False,
+                        use_bias=True,
+                        name=scope_suffix if scope_suffix is None else (scope_suffix + '_%d' % layer_idx)))
+            return branch_logits
 
 
 if __name__ == '__main__':
-    FLAGS = DeepLabFlags().FLAGS
-    # np.save('inputs_v.npy', inputs_v)
-    with tf.device('/CPU:0'):
-        inputs = tf.placeholder(name='inputs', shape=[1, 513, 513, 3], dtype=tf.float32)
-        labels = tf.placeholder(name='labels', shape=[1, 513, 513, 1], dtype=tf.int32)
-        outputs_to_scales_to_logits, loss = _build_deeplab(inputs, labels, [], FLAGS, is_training=True)
-
-    # inputs_v = np.random.rand(1, 513, 513, 3)
-    # labels_v = np.random.randint(0, 20, [1, 513, 513, 1])
-    # # inputs_v = np.load('inputs.npy')
-    # # labels_v = np.load('labels.npy')
-    # print(np.mean(inputs_v), np.var(inputs_v))
-    # sess = tf.Session()
-    # saver = tf.train.Saver()
-    # saver.restore(sess, save_path='/home/yifeng/TF_Models/pretrain/SEGS/xception_voc_trainval/model.ckpt')
-    #
-    # outv = sess.run(outputs_to_scales_to_logits, feed_dict={inputs: inputs_v, labels:labels_v})
-    #
-    # def print_dict(d):
-    #     if type(d) is dict:
-    #         for i in d:
-    #             print(i)
-    #             print_dict(d[i])
-    #     elif type(d) is list:
-    #         for i in d:
-    #             print_dict(i)
-    #     else:
-    #         print(np.mean(d), np.var(d), np.max(d), np.min(d))
-    # print_dict(outv)
+    images = tf.get_variable(shape=[16, 513, 513, 3], dtype=tf.float32, name='images')
+    logits = _get_logits(images=images,
+                         model_options=jupyter_flag(model_variant='xception_65_detection'),
+                         outputs_to_num_classes={
+                             'semantics': 21
+                         },
+                         weight_decay=0.0001,
+                         reuse=tf.AUTO_REUSE,
+                         is_training=False,
+                         fine_tune_batch_norm=False)
+    print(logits)

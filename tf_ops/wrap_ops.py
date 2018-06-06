@@ -100,14 +100,24 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
         if padding == 'SAME':
             inputs = same_padding(inputs, ksize, ratios)
 
-        conv = tf.nn.conv2d(input=inputs,
-                            filter=filters,
-                            strides=[1] + strides + [1],
-                            padding='VALID',
-                            use_cudnn_on_gpu=True,
-                            data_format="NHWC",
-                            dilations=[1] + ratios + [1],
-                            name=name)
+        if ratios == [1, 1]:
+            conv = tf.nn.conv2d(input=inputs,
+                                filter=filters,
+                                strides=[1] + strides + [1],
+                                padding='VALID',
+                                # padding=padding,
+                                use_cudnn_on_gpu=True,
+                                data_format="NHWC",
+                                dilations=[1, 1, 1, 1],
+                                name=name)
+        else:
+            assert strides == [1, 1], 'only support dilated conv with stride = [1,1]'
+            assert ratios[0] == ratios[1], 'only support same dilation rate in H and W dimension'
+            conv = tf.nn.atrous_conv2d(value=inputs,
+                                       filters=filters,
+                                       rate=ratios[0],
+                                       padding='VALID',
+                                       name=name)
 
         # tf.add_to_collection(outputs_collections, conv)
         if batch_norm:
@@ -123,6 +133,89 @@ def conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], name=None, paddin
     tf.add_to_collection(outputs_collections, conv)
     return conv
 
+
+@add_arg_scope
+def GroupConv(inputs,
+              outc,
+              ksize,
+              strides=[1, 1],
+              ratios=[1, 1],
+              padding='SAME',
+              groups=1,
+              activate=tf.nn.relu,
+              batch_norm=True,
+              use_bias=None,
+              weight_init=None,
+              weight_reg=None,
+              bias_init=tf.zeros_initializer,
+              bias_reg=None,
+              outputs_collections=None,
+              name=None):
+    """
+
+    :param inputs:
+    :param outc:
+    :param ksize:
+    :param strides:
+    :param ratios:
+    :param padding:
+    :param groups: number of groups
+    :param activate:
+    :param batch_norm:
+    :param use_bias:
+    :param weight_init:
+    :param weight_reg:
+    :param bias_init:
+    :param bias_reg:
+    :param outputs_collections:
+    :param name:
+    :return:
+    """
+    # can't use both
+    if use_bias is None:
+        use_bias = not batch_norm
+    assert not (batch_norm and use_bias)
+
+    with tf.variable_scope(name, 'GroupConv'):
+        inc = tensor_shape(inputs)[-1]
+
+        assert inc % groups == 0, print('invalid group number')
+        assert outc % groups == 0, print('invalid group number')
+
+        group_outc = outc // groups
+
+        group_ins = tf.split(inputs, axis=-1, num_or_size_splits=groups)
+        group_outs = []
+        for i in range(groups):
+            group_conv = conv2d(
+                group_ins[i],
+                outc=group_outc,
+                ksize=ksize,
+                strides=strides,
+                ratios=ratios,
+                padding=padding,
+                activate=None,
+                weight_init=weight_init,
+                weight_reg=weight_reg,
+                batch_norm=False,
+                use_bias=False,
+                name='group_{}'.format(i)
+            )
+            group_outs.append(group_conv)
+        conv = tf.concat(group_outs, axis=-1)
+
+        if batch_norm:
+            conv = batch_norm2d(conv)
+        elif use_bias:
+            biases = get_variable(name='biases', shape=[outc], init=bias_init, reg=bias_reg,
+                                  collections=BIAS_COLLECTIONS)
+            conv = group_outs + biases
+
+        if activate is not None:
+            conv = activate(conv)
+
+    tf.add_to_collection(outputs_collections, conv)
+    return conv
 
 @add_arg_scope
 def sep_conv2d(inputs, outc, ksize, strides=[1, 1], ratios=[1, 1], depth_multiplier=1, padding='SAME',
@@ -310,10 +403,10 @@ def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, fo
     """
     with tf.variable_scope(name, default_name='BatchNorm2d'):
         params_shape = tensor_shape(inputs)[-1:]
-        moving_mean = tf.get_variable('moving_mean', params_shape,
+        moving_mean = tf.get_variable('mean', params_shape,
                                       initializer=tf.zeros_initializer,
                                       trainable=False)
-        moving_variance = tf.get_variable('moving_variance', params_shape,
+        moving_variance = tf.get_variable('variance', params_shape,
                                           initializer=tf.ones_initializer,
                                           trainable=False)
 
@@ -349,9 +442,12 @@ def batch_norm2d(inputs, is_training=True, eps=1e-05, decay=0.9, affine=True, fo
             return outputs, batch_mean, batch_var
 
         outputs, batch_mean, batch_var = tf.cond(tf.constant(is_training), training_mode, inference_mode)
-        update_ops = [assign_moving_average(moving_mean, batch_mean, decay, zero_debias=False),
-                      assign_moving_average(moving_variance, batch_var, decay, zero_debias=False)]
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_ops)
+
+        if is_training:
+            tf.add_to_collection(tf.GraphKeys.UPDATE_OPS,
+                                 assign_moving_average(moving_mean, batch_mean, decay, zero_debias=False))
+            tf.add_to_collection(tf.GraphKeys.UPDATE_OPS,
+                                 assign_moving_average(moving_variance, batch_var, decay, zero_debias=False))
 
         return outputs
 
@@ -437,16 +533,18 @@ def arg_max(tensors, axis, out_type=tf.int32, keep_dim=True, name=None):
     if keep_dim:
         return tf.expand_dims(tf.argmax(tensors, axis=axis, output_type=out_type), axis=-1, name=name)
     else:
-        return tf.argmax(tensors, axis=tensors, name=name, output_type=out_type)
+        return tf.argmax(tensors, axis=axis, name=name, output_type=out_type)
 
 
 @add_arg_scope
 def softmax_with_logits(predictions, labels,
                         ignore_labels=[255],
                         loss_collections=LOSS_COLLECTIONS,
+                        reduce_method='nonzero_mean',
                         weights=None):
     """
     a loss vector [N*H*W, ]
+    :param reduce_method: 'nonzero_mean' / 'sum' / 'mean'
     :param predictions: [N, H, W, c], raw outputs of model
     :param labels: [N ,H, W, 1] int32
     :param ignore_labels: ignore pixels with ground truth in ignore_labels
@@ -466,17 +564,19 @@ def softmax_with_logits(predictions, labels,
     labels = tf.stop_gradient(labels)
     loss = tf.nn.softmax_cross_entropy_with_logits_v2(
         logits=logits, labels=labels, name='sample_wise_loss')
-    loss *= mask
 
+    loss *= mask
     if weights is not None:
         loss *= weights
         mask *= tf.cast(tf.not_equal(weights, 0), tf.float32)
 
-    loss = tf.where(
-        tf.reduce_sum(mask) < 1e-7,
-        tf.constant(0.0, dtype=tf.float32),
-        tf.divide(tf.reduce_sum(loss), tf.reduce_sum(mask), name='mean_loss')
-    )
+    if reduce_method == 'nonzero_mean':
+        loss = tf.divide(tf.reduce_sum(loss), (tf.reduce_sum(mask) + 1e-7), name='mean_loss')
+    elif reduce_method == 'sum':
+        loss = tf.reduce_sum(loss)
+    else:
+        loss = tf.reduce_mean(loss)
+
     if loss_collections is not None:
         tf.add_to_collection(loss_collections, loss)
     return loss
@@ -484,7 +584,7 @@ def softmax_with_logits(predictions, labels,
 
 def ms_softmax_with_logits(scales_to_logits,
                            labels,
-                           ignore_label,
+                           ignore_labels=[255],
                            upsample_logits=True,
                            scope=None):
     """Adds softmax cross entropy loss for logits of each scale.
@@ -494,7 +594,7 @@ def ms_softmax_with_logits(scales_to_logits,
         The logits have shape [batch, logits_height, logits_width, num_classes].
       labels: Groundtruth labels with shape [batch, image_height, image_width, 1].
       num_classes: Integer, number of target classes.
-      ignore_label: Integer, label to ignore.
+      ignore_labels: Integer, label to ignore.
       loss_weight: Float, loss weight.
       upsample_logits: Boolean, upsample logits or not.
       scope: String, the scope for the loss.
@@ -520,7 +620,7 @@ def ms_softmax_with_logits(scales_to_logits,
 
         with tf.name_scope(loss_scope):
             loss = softmax_with_logits(logits, scaled_labels,
-                                       ignore_labels=ignore_label,
+                                       ignore_labels=ignore_labels,
                                        loss_collections=LOSS_COLLECTIONS,
                                        weights=None)
             total_loss += loss
@@ -539,3 +639,87 @@ def add_to_collection(collections, variable, name=None):
         tf.add_to_collection(collections, variable)
     else:
         tf.add_to_collection(collections, tf.identity(variable, name=name))
+
+
+def iou(bboxes, ref_box):
+    """
+    :param bboxes: [N, 4]
+    :param ref_box: [1, 4]
+    :return:
+    """
+    bboxes_ymin, bboxes_xmin, bboxes_ymax, bboxes_xmax = tf.unstack(bboxes, axis=-1)
+
+    ref_ymin = ref_box[0]
+    ref_xmin = ref_box[1]
+    ref_ymax = ref_box[2]
+    ref_xmax = ref_box[3]
+
+    bboxes_volume = tf.maximum(bboxes_xmax - bboxes_xmin, 0) * \
+                    tf.maximum(bboxes_ymax - bboxes_ymin, 0)
+
+    ref_volume = tf.maximum(ref_xmax - ref_xmin, 0) * \
+                 tf.maximum(ref_ymax - ref_ymin, 0)
+
+    int_ymin = tf.maximum(bboxes_ymin, ref_ymin)
+    int_xmin = tf.maximum(bboxes_xmin, ref_xmin)
+
+    int_ymax = tf.minimum(bboxes_ymax, ref_ymax)
+    int_xmax = tf.minimum(bboxes_xmax, ref_xmax)
+
+    int_volume = tf.maximum(int_xmax - int_xmin, 0) * \
+                 tf.maximum(int_ymax - int_ymin, 0)
+
+    ious = int_volume / (bboxes_volume + ref_volume - int_volume + 1e-20)
+    return ious
+
+
+def soft_nms(scores, bboxes, max_output_size, sigma=0.5):
+    def gaussian_decay(score, degree, sigma=1.0):
+        return score * tf.exp(- degree ** 2 / sigma)
+
+    bboxes_num = tensor_shape(scores)[0]
+    loop_times = min(bboxes_num, max_output_size)
+    is_select = tf.zeros(shape=[bboxes_num], dtype=tf.float32)
+
+    def condition(i, scores, is_select):
+        return tf.less(i, loop_times)
+
+    def main_body(i, scores, is_select):
+        idx = tf.argmax(scores * (1 - is_select))
+        # mark idx as one
+        is_select = is_select + \
+                    tf.cast(tf.one_hot(idx, bboxes_num), tf.float32)
+
+        ious = iou(bboxes, tf.gather(bboxes, idx))
+        decay_scores = gaussian_decay(scores, ious, sigma=sigma)
+
+        scores = is_select * scores + (1 - is_select) * decay_scores
+        return [i + 1, scores, is_select]
+
+    i = 0
+    [i, scores, is_select] = tf.while_loop(
+        cond=condition,
+        body=main_body,
+        loop_vars=[i, scores, is_select])
+    # [?,]
+    idxes = tf.squeeze(tf.where(is_select > 0), axis=-1)
+    sorted_scores, sorted_idx = tf.nn.top_k(tf.gather(scores, idxes), k=loop_times)
+    sorted_bbox = tf.gather(bboxes, tf.gather(idxes, sorted_idx))
+
+    return sorted_scores, sorted_bbox
+
+
+def safe_divide(numerator, denominator, name):
+    """Divides two values, returning 0 if the denominator is <= 0.
+    Args:
+      numerator: A real `Tensor`.
+      denominator: A real `Tensor`, with dtype matching `numerator`.
+      name: Name for the returned op.
+    Returns:
+      0 if `denominator` <= 0, else `numerator` / `denominator`
+    """
+    return tf.where(
+        tf.greater(denominator, 0),
+        tf.divide(numerator, denominator),
+        tf.zeros_like(numerator),
+        name=name)

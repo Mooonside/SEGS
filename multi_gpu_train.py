@@ -160,7 +160,12 @@ with arg_scope([get_variable], device='/CPU:0'):
         gather_weight_grads = average_gradients(gather_weight_grads)
         gather_bias_grads = average_gradients(gather_bias_grads)
         grads = gather_weight_grads + gather_bias_grads
-        train_op = optimizer.apply_gradients(grads, global_step=global_step)
+
+        # for batch norm update
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        print(update_ops)
+        with tf.control_dependencies(update_ops):
+            train_op = optimizer.apply_gradients(grads, global_step=global_step)
 
         with tf.name_scope('summary_grads'):
             for grad, var in grads:

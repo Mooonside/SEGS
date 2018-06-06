@@ -37,8 +37,8 @@ from tensorflow.python.ops import image_ops
 FLAGS = None
 
 # Constants used for dealing with the files, matches convert_to_records.
-TRAIN_DIR = '/mnt/disk50/datasets/VOC2012/tf_segments/tf_records/train'
-VALIDATION_DIR = '/mnt/disk50/datasets/VOC2012/tf_segments/tf_records/val'
+TRAIN_DIR = '/mnt/disk50_CHENYIFENG/VOC2012/tf_multitask/train'
+VALIDATION_DIR = '/mnt/disk50_CHENYIFENG/VOC2012/tf_multitask/val'
 TRAIN_NUM = 10582
 VALID_NUM = 1449
 
@@ -55,52 +55,69 @@ def decode(serialized_example):
             'image/shape': tf.FixedLenFeature([3], tf.int64),
             'image/format': tf.FixedLenFeature([], tf.string),
             'image/encoded': tf.FixedLenFeature([], tf.string),
-            'label/format': tf.FixedLenFeature([], tf.string),
-            'label/encoded': tf.FixedLenFeature([], tf.string)
+            'label/segmentation/format': tf.FixedLenFeature([], tf.string),
+            'label/segmentation/encoded': tf.FixedLenFeature([], tf.string),
+            'label/object/bbox/xmin': tf.VarLenFeature(tf.float32),
+            'label/object/bbox/ymin': tf.VarLenFeature(tf.float32),
+            'label/object/bbox/xmax': tf.VarLenFeature(tf.float32),
+            'label/object/bbox/ymax': tf.VarLenFeature(tf.float32),
+            'label/object/bbox/label': tf.VarLenFeature(tf.int64),
+            'label/object/bbox/difficult': tf.VarLenFeature(tf.int64),
+            'label/object/bbox/truncated': tf.VarLenFeature(tf.int64)
         })
 
     features['image/encoded'] = image_ops.decode_jpeg(features['image/encoded'], channels=3)
-    features['label/encoded'] = image_ops.decode_png(features['label/encoded'], channels=1)
-    # image.set_shape((mnist.IMAGE_PIXELS))
+    features['label/segmentation/encoded'] = image_ops.decode_png(features['label/segmentation/encoded'], channels=1)
+
     return features
 
 
 def extract(features):
     image = features['image/encoded']
-    label = features['label/encoded']
+    segmentation = features['label/segmentation/encoded']
     name = features['image/name']
-    return name, image, label
+
+    # read data in the format xmins, ymins, xmaxs, ymaxes as writer writes
+    xmins = tf.sparse_tensor_to_dense(features['label/object/bbox/xmin'])
+    ymins = tf.sparse_tensor_to_dense(features['label/object/bbox/ymin'])
+    xmaxs = tf.sparse_tensor_to_dense(features['label/object/bbox/xmax'])
+    ymaxs = tf.sparse_tensor_to_dense(features['label/object/bbox/ymax'])
+    bboxes_labels = tf.sparse_tensor_to_dense(features['label/object/bbox/label'])
+    # stack use standard order
+    bboxes = tf.transpose(tf.stack([ymins, xmins, ymaxs, xmaxs]))
+
+    return name, image, segmentation, bboxes, bboxes_labels
 
 
-def augment(name, image, label):
+def augment(name, image, segmentation, bboxes, bboxes_labels):
     # OPTIONAL: Could reshape into a 28x28 image and apply distortions
     # here.  Since we are not applying any distortions in this
     # example, and the next step expects the image to be flattened
     # into a vector, we don't bother.
-    return name, image, label
+    return name, image, segmentation, bboxes, bboxes_labels
 
 
-def normalize(name, image, label):
+def normalize(name, image, segmentation, bboxes, bboxes_labels):
     # Convert from [0, 255] -> [-0.5, 0.5] floats.
     image = tf.cast(image, tf.float32) * (1. / 255) - 0.5
-    return name, image, label
+    return name, image, segmentation, bboxes, bboxes_labels
 
 
-def reshape(name, image, label, reshape_size=None):
+def reshape(name, image, segmentation, bboxes, bboxes_labels, reshape_size=None):
     if reshape_size is not None:
         image = tf.expand_dims(image, axis=0)
         image = tf.image.resize_bilinear(image, reshape_size)
-        label = tf.expand_dims(label, axis=0)
-        label = tf.image.resize_nearest_neighbor(label, reshape_size)
+        segmentation = tf.expand_dims(segmentation, axis=0)
+        segmentation = tf.image.resize_nearest_neighbor(segmentation, reshape_size)
 
-    return name, tf.squeeze(image, axis=0), tf.squeeze(label, axis=0)
-
-
-def cast_type(name, image, label):
-    return name, tf.cast(image, tf.float32), tf.cast(label, tf.int32)
+    return name, tf.squeeze(image, axis=0), tf.squeeze(segmentation, axis=0), bboxes, bboxes_labels
 
 
-def get_dataset(dir, batch_size, num_epochs, reshape_size, padding='SAME'):
+def cast_type(name, image, segmentation, bboxes, bboxes_labels):
+    return name, tf.cast(image, tf.float32), tf.cast(segmentation, tf.int32), bboxes, tf.cast(bboxes_labels, tf.int32)
+
+
+def get_dataset(dir, batch_size, num_epochs, reshape_size, padding='SAME', normalize=True):
     """Reads input data num_epochs times. AND Return the dataset
 
     Args:
@@ -110,6 +127,7 @@ def get_dataset(dir, batch_size, num_epochs, reshape_size, padding='SAME'):
          train forever.
       padding:  if 'SAME' , have ceil(#samples / batch_size) * epoch_nums batches
                 if 'VALID', have floor(#samples / batch_size) * epoch_nums batches
+      normalize: whether normalize
 
     Returns:
       A tuple (images, labels), where:
@@ -137,7 +155,8 @@ def get_dataset(dir, batch_size, num_epochs, reshape_size, padding='SAME'):
         dataset = dataset.map(extract)
         dataset = dataset.map(cast_type)
         dataset = dataset.map(augment)
-        dataset = dataset.map(normalize)
+        if normalize:
+            dataset = dataset.map(normalize)
         dataset = dataset.map(set_parameter(reshape, reshape_size=reshape_size))
 
         # the parameter is the queue size

@@ -68,6 +68,8 @@ def partial_restore(sess, cur_var_lists, ckpt_path):
     for var in list(cur_var_lists):
         name = var.name.rstrip(':0')
         if name not in var_to_shape_map.keys():
+            print('NO {} Found in ckpt So deserted.'.
+                  format(name))
             continue
 
         if var_to_shape_map[name] != var.shape:
@@ -145,3 +147,7 @@ def average_gradients(tower_grads):
         grad_and_var = (grad, v)
         average_grads.append(grad_and_var)
     return average_grads
+
+
+if __name__ == '__main__':
+    inspect_ckpt('/mnt/disk/chenyifeng/TF_Models/ptrain/SEGS/xception_voc_trainval/model.ckpt')
